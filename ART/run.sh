@@ -1,0 +1,2 @@
+#python examples/get_started_pytorch_uncertainty_pgd.py
+python examples/get_started_pytorch_uncertainty_pgd_ang.py

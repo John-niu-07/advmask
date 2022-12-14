@@ -1,0 +1,5 @@
+ypeError: Cannot convert the argument `type_value`: torch.float32 to a TensorFlow DType
+.
+No gradient defined for operation'IteratorGetNext' (op type: IteratorGetNext).
+
+libtorch_cuda_cpp.so: undefined symbol: cudaGraphRetainUserObject, version libcudart.so.11.0
