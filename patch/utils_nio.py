@@ -98,20 +98,13 @@ def load_embedder(embedder_names, device):
         sd = torch.load(weights_path, map_location=device)
         if 'magface' in embedder_name:
             embedder = MFBackbone.IResNet(MFBackbone.IBasicBlock, layers=embedders_dict[backbone]['layers']).to(device).eval()
-            print(embedder_name)
-            if embedder_name == 'resnet18_magface':
-                sd = rewrite_weights_dict_mag18(sd['state_dict'])
-            elif embedder_name == 'resnet50_magface': 
-                sd = rewrite_weights_dict_mag50(sd['state_dict'])
-            else:
-                sd = rewrite_weights_dict(sd['state_dict'])
+            sd = rewrite_weights_dict(sd['state_dict'])
         else:
             embedder = InsightFaceResnetBackbone.IResNet(InsightFaceResnetBackbone.IBasicBlock,
                                                          layers=embedders_dict[backbone]['layers']).to(device).eval()
         embedder.load_state_dict(sd)
         embedders[embedder_name] = embedder
     return embedders
-
 
 
 def rewrite_weights_dict(sd):
@@ -121,36 +114,6 @@ def rewrite_weights_dict(sd):
         new_key = key.replace('features.module.', '')
         sd_new[new_key] = value
     return sd_new
-
-
-
-#magface18
-def rewrite_weights_dict_mag18(sd):
-    #sd.pop('fc.weight')
-    sd_new = OrderedDict()
-    for key, value in sd.items():
-        #print(key)
-        if key == 'module.fc.weight' or key == 'parallel_fc.weight':
-            print(key)
-        else:
-            new_key = key.replace('module.features.', '')
-            sd_new[new_key] = value
-    return sd_new
-
-
-#magface50
-def rewrite_weights_dict_mag50(sd):
-    #sd.pop('fc.weight')
-    sd_new = OrderedDict()
-    for key, value in sd.items():
-        #print(key)
-        if key == 'fc.weight' or key == 'parallel_fc.weight':
-            print(key)
-        else:
-            new_key = key.replace('features.module.', '')
-            sd_new[new_key] = value
-    return sd_new
-
 
 
 class EarlyStopping:
@@ -218,25 +181,29 @@ class EarlyStopping:
         return False
     '''
 
-    def __call__(self, val_loss, patch, epoch, latent_z_init, latent_z_mask):
+    #def __call__(self, val_loss, patch, epoch, latent_z_init, latent_z_mask):
+    def __call__(self, val_loss, patch, epoch):
 
         score = -val_loss
 
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint_z2(val_loss, patch, epoch, latent_z_init, latent_z_mask)
+            self.save_checkpoint(val_loss, patch, epoch)
+            #self.save_checkpoint_z2(val_loss, patch, epoch, latent_z_init, latent_z_mask)
         elif score < self.best_score + self.delta:
             self.counter += 1
             print(f'EarlyStopping counter: {self.counter} out of {self.patience}', flush=True)
-            self.save_checkpoint_z2(val_loss, patch, epoch, latent_z_init, latent_z_mask) 
+            self.save_checkpoint(val_loss, patch, epoch) 
+            #self.save_checkpoint_z2(val_loss, patch, epoch, latent_z_init, latent_z_mask) 
 
             if self.counter >= self.patience:
                 print("Training stopped - early stopping", flush=True)
                 return True
         else:
             self.best_score = score
+            self.save_checkpoint(val_loss, patch, epoch)
             #self.save_checkpoint_z(val_loss, patch, epoch, latent_z_init, latent_z_mask)
-            self.save_checkpoint_z2(val_loss, patch, epoch, latent_z_init, latent_z_mask)
+            #self.save_checkpoint_z2(val_loss, patch, epoch, latent_z_init, latent_z_mask)
             self.counter = 0
         
         return False
@@ -490,9 +457,15 @@ def get_person_embedding(config, loader, celeb_lab, location_extractor, fxz_proj
         for img_batch, _, person_indices in tqdm(loader):
             img_batch = img_batch.to(device)
             if include_others:
-                mask_path = masks_path[random.randint(0, 2)]
-                mask_t = load_mask(config, mask_path, device)
-                applied_batch = apply_mask(location_extractor, fxz_projector, img_batch, mask_t[:, :3], mask_t[:, 3], is_3d=True)
+                #mask_path = masks_path[random.randint(0, 2)]
+                #mask_t = load_mask(config, mask_path, device)
+                #applied_batch = apply_mask(location_extractor, fxz_projector, img_batch, mask_t[:, :3], mask_t[:, 3], is_3d=True)
+
+                patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask5.png').convert('L')).to(device).unsqueeze(0)
+                patch_mask = F.interpolate(self.patch_mask, (112, 112))
+                applied_batch = img_batch * (1 - patch_mask) + adv_patch * patch_mask
+
+
                 img_batch = torch.cat([img_batch, applied_batch], dim=0)
                 person_indices = person_indices.repeat(2)
             embedding = embedder(img_batch)

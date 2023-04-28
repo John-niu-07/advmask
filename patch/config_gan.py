@@ -91,7 +91,8 @@ class BaseConfiguration:
         self.initial_patch = 'white'  # body, white, random, stripes, l_stripes
         #self.initial_patch = 'grey'  # body, white, random, stripes, l_stripes
         #self.initial_patch = 'init'  # body, white, random, stripes, l_stripes
-        self.epochs = 250
+        #self.epochs = 450
+        self.epochs = 1000
         #self.epochs = 20
         #self.start_learning_rate = 1e-2
         #self.start_learning_rate = 0.01

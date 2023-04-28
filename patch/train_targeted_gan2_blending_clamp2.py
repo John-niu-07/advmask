@@ -301,137 +301,25 @@ class AdversarialMask:
             control_z = torch.from_numpy(control_z_np)
             self.latent_z_control = control_z.clone()
 
-            #neg_z_np = np.load('/face/Mask/idinvert_pytorch/results/inversion/my_test10/inverted_codes.npy').reshape((1, 7168))
-            neg_z_np = np.load('latent_z_adv8_.npy')[0].reshape((1, 7168)) 
-            neg_z = torch.from_numpy(neg_z_np)
-            self.latent_neg_z = neg_z.clone()
+            self.latent_neg_z1 = torch.from_numpy(np.load('latent_z_adv8C_1.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z2 = torch.from_numpy(np.load('latent_z_adv8C_2.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z3 = torch.from_numpy(np.load('latent_z_adv8C_3.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z4 = torch.from_numpy(np.load('latent_z_adv8C_4.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z5 = torch.from_numpy(np.load('latent_z_adv8C_5.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z6 = torch.from_numpy(np.load('latent_z_adv8C_6.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z7 = torch.from_numpy(np.load('latent_z_adv8C_7.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z8 = torch.from_numpy(np.load('latent_z_adv8C_8.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z9 = torch.from_numpy(np.load('latent_z_adv8C_9.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z10 = torch.from_numpy(np.load('latent_z_adv8C_10.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z11 = torch.from_numpy(np.load('latent_z_adv8C_11.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z12 = torch.from_numpy(np.load('latent_z_adv8C_12.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z13 = torch.from_numpy(np.load('latent_z_adv8C_13.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z14 = torch.from_numpy(np.load('latent_z_adv8C_14.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z15 = torch.from_numpy(np.load('latent_z_adv8C_15.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z16 = torch.from_numpy(np.load('latent_z_adv8C_16.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z17 = torch.from_numpy(np.load('latent_z_adv8C_17.npy')[0].reshape((1, 7168))).clone()
+            self.latent_neg_z18 = torch.from_numpy(np.load('latent_z_adv8C_18.npy')[0].reshape((1, 7168))).clone()
 
-            #neg_z2_np = np.load('latent_z_adv8_2.npy')[0].reshape((1, 7168)) 
-            neg_z2_np = np.load('latent_z_adv8_2_.npy')[0].reshape((1, 7168)) 
-            neg_z2 = torch.from_numpy(neg_z2_np)
-            self.latent_neg_z2 = neg_z2.clone()
-
-            neg_z3_np = np.load('latent_z_adv8_3.npy')[0].reshape((1, 7168)) 
-            neg_z3 = torch.from_numpy(neg_z3_np)
-            self.latent_neg_z3 = neg_z3.clone()
-
-            neg_z4_np = np.load('latent_z_adv8_4.npy')[0].reshape((1, 7168)) 
-            neg_z4 = torch.from_numpy(neg_z4_np)
-            self.latent_neg_z4 = neg_z4.clone()
-
-            neg_z5_np = np.load('latent_z_adv8_5.npy')[0].reshape((1, 7168)) 
-            neg_z5 = torch.from_numpy(neg_z5_np)
-            self.latent_neg_z5 = neg_z5.clone()
-
-            neg_z6_np = np.load('latent_z_adv8_6.npy')[0].reshape((1, 7168)) 
-            neg_z6 = torch.from_numpy(neg_z6_np)
-            self.latent_neg_z6 = neg_z6.clone()
-
-            neg_z7_np = np.load('latent_z_adv8_7.npy')[0].reshape((1, 7168)) 
-            neg_z7 = torch.from_numpy(neg_z7_np)
-            self.latent_neg_z7 = neg_z7.clone()
-
-            neg_z8_np = np.load('latent_z_adv8_8.npy')[0].reshape((1, 7168)) 
-            neg_z8 = torch.from_numpy(neg_z8_np)
-            self.latent_neg_z8 = neg_z8.clone()
-
-            neg_z9_np = np.load('latent_z_adv8_9.npy')[0].reshape((1, 7168)) 
-            neg_z9 = torch.from_numpy(neg_z9_np)
-            self.latent_neg_z9 = neg_z9.clone()
-
-            neg_z10_np = np.load('latent_z_adv8_10.npy')[0].reshape((1, 7168)) 
-            neg_z10 = torch.from_numpy(neg_z10_np)
-            self.latent_neg_z10 = neg_z10.clone()
-
-            neg_z11_np = np.load('latent_z_adv8_11.npy')[0].reshape((1, 7168))
-            neg_z11 = torch.from_numpy(neg_z11_np)
-            self.latent_neg_z11 = neg_z11.clone()
-
-
-            neg_z12_np = np.load('latent_z_adv8_12.npy')[0].reshape((1, 7168))
-            neg_z12 = torch.from_numpy(neg_z12_np)
-            self.latent_neg_z12 = neg_z12.clone()
-
-
-            neg_z13_np = np.load('latent_z_adv8_13.npy')[0].reshape((1, 7168))
-            neg_z13 = torch.from_numpy(neg_z13_np)
-            self.latent_neg_z13 = neg_z13.clone()
-
-            neg_z14_np = np.load('latent_z_adv8_14.npy')[0].reshape((1, 7168))
-            neg_z14 = torch.from_numpy(neg_z14_np)
-            self.latent_neg_z14 = neg_z14.clone()
-
-            neg_z15_np = np.load('latent_z_adv8_15.npy')[0].reshape((1, 7168))
-            neg_z15 = torch.from_numpy(neg_z15_np)
-            self.latent_neg_z15 = neg_z15.clone()
-
-            neg_z16_np = np.load('latent_z_adv8_16.npy')[0].reshape((1, 7168))
-            neg_z16 = torch.from_numpy(neg_z16_np)
-            self.latent_neg_z16 = neg_z16.clone()
-
-            neg_z17_np = np.load('latent_z_adv8_17.npy')[0].reshape((1, 7168))
-            neg_z17 = torch.from_numpy(neg_z17_np)
-            self.latent_neg_z17 = neg_z17.clone()
-
-            neg_z18_np = np.load('latent_z_adv8_18.npy')[0].reshape((1, 7168))
-            neg_z18 = torch.from_numpy(neg_z18_np)
-            self.latent_neg_z18 = neg_z18.clone()
-
-            neg_z19_np = np.load('latent_z_adv8_19.npy')[0].reshape((1, 7168))
-            neg_z19 = torch.from_numpy(neg_z19_np)
-            self.latent_neg_z19 = neg_z19.clone()
-            
-            neg_z20_np = np.load('latent_z_adv8_20.npy')[0].reshape((1, 7168))
-            neg_z20 = torch.from_numpy(neg_z20_np)
-            self.latent_neg_z20 = neg_z20.clone()
-
-            neg_z21_np = np.load('latent_z_adv8_21.npy')[0].reshape((1, 7168))
-            neg_z21 = torch.from_numpy(neg_z21_np)
-            self.latent_neg_z21 = neg_z21.clone()
-
-            neg_z22_np = np.load('latent_z_adv8_22.npy')[0].reshape((1, 7168))
-            neg_z22 = torch.from_numpy(neg_z22_np)
-            self.latent_neg_z22 = neg_z22.clone()
-
-            neg_z23_np = np.load('latent_z_adv8_23.npy')[0].reshape((1, 7168))
-            neg_z23 = torch.from_numpy(neg_z23_np)
-            self.latent_neg_z23 = neg_z23.clone()
-
-            neg_z24_np = np.load('latent_z_adv8_24.npy')[0].reshape((1, 7168))
-            neg_z24 = torch.from_numpy(neg_z24_np)
-            self.latent_neg_z24 = neg_z24.clone()
-
-            neg_z25_np = np.load('latent_z_adv8_25.npy')[0].reshape((1, 7168))
-            neg_z25 = torch.from_numpy(neg_z25_np)
-            self.latent_neg_z25 = neg_z25.clone()
-
-            neg_z26_np = np.load('latent_z_adv8_26.npy')[0].reshape((1, 7168))
-            neg_z26 = torch.from_numpy(neg_z26_np)
-            self.latent_neg_z26 = neg_z26.clone()
-
-            neg_z27_np = np.load('latent_z_adv8_27.npy')[0].reshape((1, 7168))
-            neg_z27 = torch.from_numpy(neg_z27_np)
-            self.latent_neg_z27 = neg_z27.clone()
-
-            neg_z28_np = np.load('latent_z_adv8_28.npy')[0].reshape((1, 7168))
-            neg_z28 = torch.from_numpy(neg_z28_np)
-            self.latent_neg_z28 = neg_z28.clone()
-
-            neg_z29_np = np.load('latent_z_adv8_29.npy')[0].reshape((1, 7168))
-            neg_z29 = torch.from_numpy(neg_z29_np)
-            self.latent_neg_z29 = neg_z29.clone()
-
-            neg_z30_np = np.load('latent_z_adv8_30.npy')[0].reshape((1, 7168))
-            self.latent_neg_z30 = torch.from_numpy(neg_z30_np).clone()
-
-            neg_z31_np = np.load('latent_z_adv8_31.npy')[0].reshape((1, 7168))
-            self.latent_neg_z31 = torch.from_numpy(neg_z31_np).clone()
-
-            neg_z32_np = np.load('latent_z_adv8_32.npy')[0].reshape((1, 7168))
-            self.latent_neg_z32 = torch.from_numpy(neg_z32_np).clone()
-
-            neg_z33_np = np.load('latent_z_adv8_33.npy')[0].reshape((1, 7168))
-            self.latent_neg_z33 = torch.from_numpy(neg_z33_np).clone()
 
         self.latent_z_init = latent_z.clone()
         self.latent_z_init_np = latent_z.clone().detach().numpy()
@@ -573,10 +461,6 @@ class AdversarialMask:
                 latent_z = perturbation + self.latent_z_init
                 '''
 
-                tmp2_z = latent_z.clone().detach().numpy()
-                diff_z = tmp2_z - self.latent_z_init_np
-                #diff_z = tmp2_z - tmp_z_np
-                diff_z_ = np.linalg.norm(diff_z)
 
 
 
@@ -591,10 +475,9 @@ class AdversarialMask:
                 #if cnt + 1 == 5:
                 #if cnt  == 10:
                 if cnt  == 1:
-                    print('--diff z: '+ str(diff_z_) )
                     #print(str(np.max(latent_z.detach().numpy())) + '  '+ str(np.min(latent_z.detach().numpy())) )
                     #print(str(np.linalg.norm(latent_z.detach().numpy()))  )
-                    print(torch.norm( latent_z - self.latent_z_init, p=2 ).detach().numpy())
+                    print('--norm z : ' + str(torch.norm( latent_z - self.latent_z_init, p=2 ).detach().numpy()))
 
                     self.save_losses(epoch_length, train_loss, dist_loss, tv_loss)
                     progress_bar.set_postfix_str(prog_bar_desc.format(self.train_losses_epoch[-1],
@@ -639,70 +522,43 @@ class AdversarialMask:
         #total_loss += 10.0 * latent_loss 
 
 
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) 
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2) - torch.norm(latent_z - self.latent_neg_z7, p=2) 
-        #latent_neg_loss = - 2.0 * torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2) - 2.0 * torch.norm(latent_z - self.latent_neg_z7, p=2) - 2.0* torch.norm(latent_z - self.latent_neg_z8, p=2)
-        latent_neg_loss = - 2.0 * torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2) - 2.0 * torch.norm(latent_z - self.latent_neg_z7, p=2) - 2.0* torch.norm(latent_z - self.latent_neg_z8, p=2) - torch.norm(latent_z - self.latent_neg_z9, p=2) - torch.norm(latent_z - self.latent_neg_z10, p=2) - torch.norm(latent_z - self.latent_neg_z11, p=2) - torch.norm(latent_z - self.latent_neg_z12, p=2) - torch.norm(latent_z - self.latent_neg_z13, p=2) - torch.norm(latent_z - self.latent_neg_z14, p=2) - torch.norm(latent_z - self.latent_neg_z15, p=2) - torch.norm(latent_z - self.latent_neg_z16, p=2) - torch.norm(latent_z - self.latent_neg_z17, p=2)  - torch.norm(latent_z - self.latent_neg_z18, p=2)  - torch.norm(latent_z - self.latent_neg_z19, p=2) - torch.norm(latent_z - self.latent_neg_z20, p=2) - torch.norm(latent_z - self.latent_neg_z21, p=2) - torch.norm(latent_z - self.latent_neg_z22, p=2) - torch.norm(latent_z - self.latent_neg_z23, p=2) - torch.norm(latent_z - self.latent_neg_z24, p=2) - torch.norm(latent_z - self.latent_neg_z25, p=2) - torch.norm(latent_z - self.latent_neg_z26, p=2) - torch.norm(latent_z - self.latent_neg_z27, p=2)  - torch.norm(latent_z - self.latent_neg_z28, p=2) - torch.norm(latent_z - self.latent_neg_z29, p=2) - torch.norm(latent_z - self.latent_neg_z30, p=2) - torch.norm(latent_z - self.latent_neg_z31, p=2) - torch.norm(latent_z - self.latent_neg_z32, p=2) - torch.norm(latent_z - self.latent_neg_z33, p=2)
-        #latent_loss = -latent_neg_loss
+        #latent_neg_loss = - 2.0 * torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2) - 2.0 * torch.norm(latent_z - self.latent_neg_z7, p=2) - 2.0* torch.norm(latent_z - self.latent_neg_z8, p=2) - torch.norm(latent_z - self.latent_neg_z9, p=2) - torch.norm(latent_z - self.latent_neg_z10, p=2) - torch.norm(latent_z - self.latent_neg_z11, p=2) - torch.norm(latent_z - self.latent_neg_z12, p=2) - torch.norm(latent_z - self.latent_neg_z13, p=2) - torch.norm(latent_z - self.latent_neg_z14, p=2) - torch.norm(latent_z - self.latent_neg_z15, p=2) - torch.norm(latent_z - self.latent_neg_z16, p=2) - torch.norm(latent_z - self.latent_neg_z17, p=2)  - torch.norm(latent_z - self.latent_neg_z18, p=2)  - torch.norm(latent_z - self.latent_neg_z19, p=2) - torch.norm(latent_z - self.latent_neg_z20, p=2) - torch.norm(latent_z - self.latent_neg_z21, p=2) - torch.norm(latent_z - self.latent_neg_z22, p=2) - torch.norm(latent_z - self.latent_neg_z23, p=2) - torch.norm(latent_z - self.latent_neg_z24, p=2) - torch.norm(latent_z - self.latent_neg_z25, p=2) - torch.norm(latent_z - self.latent_neg_z26, p=2) - torch.norm(latent_z - self.latent_neg_z27, p=2)  - torch.norm(latent_z - self.latent_neg_z28, p=2) - torch.norm(latent_z - self.latent_neg_z29, p=2) - torch.norm(latent_z - self.latent_neg_z30, p=2) - torch.norm(latent_z - self.latent_neg_z31, p=2) - torch.norm(latent_z - self.latent_neg_z32, p=2) - torch.norm(latent_z - self.latent_neg_z33, p=2)
 
 
-
-        total_loss += 10.0* torch.clamp( torch.norm( latent_z - self.latent_z_init, p=2 ) - 50, min=0)
-
-
-        #total_loss = 0 
-        #if epoch > 100:
-        if epoch > 50:
-            #total_loss += 0.3* torch.norm( latent_z, p=2 )
+        rad = 8
+        #total_loss += 10*torch.clamp( 5-torch.norm(latent_z - self.latent_neg_z1, p=2), min=0)
+        total_loss += 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z1, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z2, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z3, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z4, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z5, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z6, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z7, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z8, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z9, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z10, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z11, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z12, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z13, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z14, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z15, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z16, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z17, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z18, p=2), min=0)
 
 
-            #total_loss += 0.5 * latent_loss 
-            #total_loss += 1.0 * latent_loss 
-            #total_loss += 0.5 * latent_loss 
-            
-            #total_loss += 0.05 * latent_neg_loss 
-            total_loss += 0.08 * latent_neg_loss 
-            #total_loss += 0.3 * latent_neg_loss 
-        else:
-            #total_loss += 0.3* torch.norm( latent_z, p=2 )
-
-
-            #total_loss += 0.1 * latent_loss 
-            #total_loss += 1.0 * latent_loss 
-            #total_loss += 0.5 * latent_loss
-
-            total_loss += 0.1 * latent_neg_loss 
-            #total_loss += 0.3 * latent_neg_loss 
+        total_loss += 10*torch.clamp( torch.norm( latent_z - self.latent_z_init, p=2 ) - 10, min=0)
+        latent_loss = torch.norm( latent_z - self.latent_z_init, p=2 ) 
 
         #if epoch ==100:
         #if epoch ==50:
         if epoch ==240:
         #if epoch ==100:
             latent_z_np = latent_z.clone().detach().numpy()
-        #    #np.save('latent_z_adv8_2_.npy', latent_z_np)
-        #    #np.save('latent_z_adv8_3.npy', latent_z_np)
-        #    np.save('latent_z_adv8_4.npy', latent_z_np)
-        #    np.save('latent_z_adv8_5.npy', latent_z_np)
-        #    np.save('latent_z_adv8_6.npy', latent_z_np)
-        #    np.save('latent_z_adv8_7.npy', latent_z_np)
-        #    np.save('latent_z_adv8_8.npy', latent_z_np)
-        #    np.save('latent_z_adv8_9.npy', latent_z_np)
-        #    np.save('latent_z_adv8_10.npy', latent_z_np)
-        #    np.save('latent_z_adv8_11.npy', latent_z_np)
-        #    np.save('latent_z_adv8_12.npy', latent_z_np)
-        #    np.save('latent_z_adv8_13.npy', latent_z_np)
-        #    np.save('latent_z_adv8_14.npy', latent_z_np)
-        #    np.save('latent_z_adv8_15.npy', latent_z_np)
-        #    np.save('latent_z_adv8_16.npy', latent_z_np)
-        #    np.save('latent_z_adv8_17.npy', latent_z_np)
-        #    np.save('latent_z_adv8_18.npy', latent_z_np)
-        #    np.save('latent_z_adv8_19.npy', latent_z_np)
-        #    np.save('latent_z_adv8_20.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_1.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_2.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_3.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_4.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_5.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_6.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_7.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_8.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_9.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_10.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_11.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_12.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_13.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_14.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_15.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_16.npy', latent_z_np)
+
+
+        #    np.save('latent_z_adv8C_17.npy', latent_z_np)
+        #    np.save('latent_z_adv8C_18.npy', latent_z_np)
+            np.save('latent_z_adv8C_19.npy', latent_z_np)
         #    np.save('latent_z_adv8_21.npy', latent_z_np)
         #    np.save('latent_z_adv8_22.npy', latent_z_np)
         #    np.save('latent_z_adv8_23.npy', latent_z_np)

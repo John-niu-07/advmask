@@ -18,11 +18,12 @@ from config import embedders_dict
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import torch.nn.functional as F
-from art.estimators.classification.stylegan_generator import StyleGANGenerator
+#from art.estimators.classification.stylegan_generator import StyleGANGenerator
 
 import matplotlib
 matplotlib.use('TkAgg')
-from model import Discriminator
+from train_encoder import VGGLoss
+from model import Encoder, Generator, Discriminator
 
 def _get_tensor_value(tensor):
   """Gets the value of a torch Tensor."""
@@ -98,20 +99,22 @@ def load_embedder(embedder_names, device):
         sd = torch.load(weights_path, map_location=device)
         if 'magface' in embedder_name:
             embedder = MFBackbone.IResNet(MFBackbone.IBasicBlock, layers=embedders_dict[backbone]['layers']).to(device).eval()
+            #sd = rewrite_weights_dict(sd['state_dict'])
+
             print(embedder_name)
             if embedder_name == 'resnet18_magface':
                 sd = rewrite_weights_dict_mag18(sd['state_dict'])
-            elif embedder_name == 'resnet50_magface': 
+            elif embedder_name == 'resnet50_magface':
                 sd = rewrite_weights_dict_mag50(sd['state_dict'])
             else:
                 sd = rewrite_weights_dict(sd['state_dict'])
+
         else:
             embedder = InsightFaceResnetBackbone.IResNet(InsightFaceResnetBackbone.IBasicBlock,
                                                          layers=embedders_dict[backbone]['layers']).to(device).eval()
         embedder.load_state_dict(sd)
         embedders[embedder_name] = embedder
     return embedders
-
 
 
 def rewrite_weights_dict(sd):
@@ -121,8 +124,6 @@ def rewrite_weights_dict(sd):
         new_key = key.replace('features.module.', '')
         sd_new[new_key] = value
     return sd_new
-
-
 
 #magface18
 def rewrite_weights_dict_mag18(sd):
@@ -157,7 +158,7 @@ class EarlyStopping:
     """
     Early stops the training if validation loss doesn't improve after a given patience.
     """
-    def __init__(self, patience=7, verbose=False, delta=0, current_dir='', init_patch=None):
+    def __init__(self, patience=7, verbose=False, delta=0, current_dir='', init_patch=None, device=None):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
@@ -177,25 +178,24 @@ class EarlyStopping:
         self.best_patch = init_patch
         #self.alpha = transforms.ToTensor()(Image.open('../prnet/new_uv.png').convert('L'))
 
-        self.alpha = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask5.png').convert('L')).unsqueeze(0)
-        self.alpha = F.interpolate(self.alpha, (112, 112))
+        #self.alpha = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask8.png').convert('L')).unsqueeze(0)
+        #self.alpha = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask6.png').convert('L')).unsqueeze(0)
+        #self.alpha = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask5.png').convert('L')).unsqueeze(0)
+        self.alpha = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask3.png').convert('L')).unsqueeze(0)
+        self.alpha = F.interpolate(self.alpha, (250, 250))
 
-        self.G = StyleGANGenerator('styleganinv_ffhq256')
-        for name, param in self.G.net.named_parameters():
-            param.requires_grad = False
-
-        '''
+        #self.G = StyleGANGenerator('styleganinv_ffhq256')
         image_size=256
         g_model_path = '/face/Mask/stylegan2-encoder-pytorch/checkpoint/generator_ffhq.pt'
-        g_ckpt = torch.load(g_model_path)
+        g_ckpt = torch.load(g_model_path, map_location=device)
         latent_dim = g_ckpt['args'].latent
-        channel_multiplier = g_ckpt['args'].channel_multiplier
-        self.discriminator = Discriminator(image_size, channel_multiplier)
-        self.discriminator.load_state_dict(g_ckpt["d"], strict=False)
-        self.discriminator.eval()
-        print('[discriminator loaded]')
-        '''
-
+        self.generator = Generator(image_size, latent_dim, 8).to(device)
+        #self.generator = Generator(image_size, latent_dim, 8)
+        self.trunc = self.generator.mean_latent(4096).detach().clone()
+        self.generator.load_state_dict(g_ckpt["g_ema"], strict=False)
+        self.generator.eval()
+        print('[generator loaded]')
+        self.device = device
 
     '''
     def __call__(self, val_loss, patch, epoch):
@@ -267,18 +267,25 @@ class EarlyStopping:
         if self.verbose:
             print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving patch ...', flush=True)
 
-
+        patch = patch.to(self.device)
         patch = latent_z_init * (1-latent_z_mask) + patch * latent_z_mask
 
-        x_inv = self.G.net.synthesis(patch.view(1, 14, 512))
+        #x_inv = self.G.net.synthesis(patch.view(1, 14, 512))
+        #patch = patch.cpu()
+        truncation = 0.7
+        #trunc = self.generator.mean_latent(4096).detach().clone().cpu()
+        #trunc = self.generator.mean_latent(4096).detach().clone()
+        x_inv, _ =  self.generator([patch], input_is_latent=True, truncation=truncation, truncation_latent=self.trunc, randomize_noise=False)
 
 
 
-        x_inv = F.interpolate(x_inv, (112, 112))
+        x_inv = F.interpolate(x_inv, (250, 250))
 
+        #need?
+        #encoder_out = self.G.postprocess(_get_tensor_value(x_inv))
+        #encoder_out = x_inv.clamp_(-1., 1.).detach().squeeze().permute(1,2,0)*0.5 + 0.5
+        encoder_out = x_inv.clamp_(-1., 1.)*0.5 + 0.5
 
-        encoder_out = self.G.postprocess(_get_tensor_value(x_inv))
-  
         #final_patch = torch.cat([patch.squeeze(0), self.alpha])
         transforms.ToPILImage()(encoder_out[0]).save(self.current_dir +
                                                   '/saved_patches' +
@@ -298,32 +305,29 @@ class EarlyStopping:
             print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving patch ...', flush=True)
 
 
+        patch = patch.to(self.device)
         patch = latent_z_init * (1-latent_z_mask) + patch * latent_z_mask
 
-        x_inv = self.G.net.synthesis(patch.view(1, 14, 512))
-
-        #pred_inv = self.discriminator(x_inv.cpu())
-        #print(pred_inv)
+        #x_inv = self.G.net.synthesis(patch.view(1, 14, 512))
+        #patch = patch.cpu()
+        truncation = 0.7
+        trunc = self.generator.mean_latent(4096)
+        #self.trunc = torch.zeros((1, 512)).to(self.device)
+        x_inv, _ =  self.generator([patch], input_is_latent=True, truncation=truncation, truncation_latent=trunc, randomize_noise=False)
 
         if 0: #zoom in
             x_inv= F.interpolate(x_inv, (140, 140))
             x_inv = transforms.CenterCrop(112)(x_inv)
         else: #w/o zoom in
-            x_inv = F.interpolate(x_inv, (112, 112))
+            x_inv = F.interpolate(x_inv, (250, 250))
 
 
-        encoder_out = x_inv.clamp_(-1., 1.) *0.5 + 0.5
-
-        '''
-        encoder_out = self.G.postprocess(_get_tensor_value(x_inv))
-        encoder_out = torch.from_numpy(encoder_out).permute(0,3,1,2)/255.
-        '''
-
-
-        #encoder_out = np.uint8(_get_tensor_value(x_inv.permute(0,2,3,1).clamp_(-1., 1.) *0.5 + 0.5)*255)
+        #need?
+        #encoder_out = self.G.postprocess(_get_tensor_value(x_inv))
+        #encoder_out = x_inv.clamp_(-1., 1.).detach().squeeze()*0.5 + 0.5
+        encoder_out = x_inv.clamp_(-1., 1.)*0.5 + 0.5
 
         #final_patch = torch.cat([patch.squeeze(0), self.alpha])
-        #transforms.ToPILImage()(encoder_out[0]).save(self.current_dir +
         transforms.ToPILImage()(encoder_out[0]).save(self.current_dir +
                                                   '/saved_patches' +
                                                   '/patch_' +
@@ -394,8 +398,8 @@ def get_train_loaders(config):
                                    img_size=config.img_size,
                                    indices=train_indices,
                                    transform=transforms.Compose(
-                                       [transforms.ColorJitter(brightness=0.2, contrast=0.2, hue=0.2),
-                                        transforms.Resize(config.img_size),
+                                       #[transforms.ColorJitter(brightness=0.2, contrast=0.2, hue=0.2),
+                                        [transforms.Resize(config.img_size),
                                         transforms.ToTensor()]))
     train_no_aug_loader = DataLoader(train_dataset_no_aug, batch_size=config.train_batch_size)
     train_loader = DataLoader(train_dataset, batch_size=config.train_batch_size)
@@ -470,6 +474,8 @@ def get_person_embedding_z(config, loader, celeb_lab, location_extractor, fxz_pr
 
                 img_batch = torch.cat([img_batch, applied_batch], dim=0)
                 person_indices = person_indices.repeat(2)
+
+            img_batch = F.interpolate(img_batch, (112, 112))
             embedding = embedder(img_batch)
             for idx in person_indices.unique():
                 relevant_indices = torch.nonzero(person_indices == idx, as_tuple=True)
@@ -567,7 +573,7 @@ def plot_separate_loss(config, train_losses_epoch, dist_losses, tv_losses, tv_lo
     fig, axes = plt.subplots(nrows=number_of_subplots, ncols=1, figsize=(6 * number_of_subplots, 2 * number_of_subplots), squeeze=False)
     idx = 0
     #for weight, train_loss, label in zip(weights, [dist_losses,  tv_losses], ['Distance loss', 'Total Variation loss']):
-    for weight, train_loss, label in zip(weights, [dist_losses,  tv_losses, tv_losses2, tv_losses3], ['Distance loss', 'Total Variation loss', 'latent 2', 'D_loss']):
+    for weight, train_loss, label in zip(weights, [dist_losses,  tv_losses, tv_losses2, tv_losses3], ['Distance loss', 'latent norm', 'latent neg', 'D_loss']):
         if weight > 0:
             #axes[0, idx].plot(epochs, train_loss, c='b', label='Train')
             #axes[0, idx].set_xlabel('Epoch')

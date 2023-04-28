@@ -13,10 +13,6 @@ embedders_dict = {
             },
             'cosface': {
                 'weights_path': os.path.join('..', 'face_recognition', 'insightface_torch', 'weights', 'glint360k_cosface_resnet18.pth')
-            },
-            'magface': {
-                'weights_path': os.path.join('..', 'face_recognition', 'magface_torch', 'weights',
-                                             'magface_iresnet18_casia_dp.pth')
             }
         }
     },
@@ -43,10 +39,6 @@ embedders_dict = {
             'cosface': {
                 'weights_path': os.path.join('..', 'face_recognition', 'insightface_torch', 'weights',
                                              'glint360k_cosface_resnet50.pth')
-            },
-            'magface': {
-                'weights_path': os.path.join('..', 'face_recognition', 'magface_torch', 'weights',
-                                             'magface_iresnet50_MS1MV2_ddp_fp32.pth')
             }
         }
     },
@@ -84,7 +76,7 @@ class BaseConfiguration:
         self.celeb_lab = os.listdir(self.train_img_dir)[:self.train_number_of_people]
         self.celeb_lab_mapper = {i: lab for i, lab in enumerate(self.celeb_lab)}
         #self.num_of_train_images = 5
-        self.num_of_train_images = 10
+        self.num_of_train_images = 33
 
         self.shuffle = True
         self.img_size = (112, 112)
@@ -95,9 +87,10 @@ class BaseConfiguration:
         # Attack options
         self.mask_aug = True
         self.patch_size = (112, 112)  # height, width
-        self.initial_patch = 'white'  # body, white, random, stripes, l_stripes
-        #self.initial_patch = 'grey'  # body, white, random, stripes, l_stripes
+        #self.initial_patch = 'white'  # body, white, random, stripes, l_stripes
+        self.initial_patch = 'grey'  # body, white, random, stripes, l_stripes
         #self.initial_patch = 'init'  # body, white, random, stripes, l_stripes
+        #self.epochs = 1000
         self.epochs = 100
         #self.start_learning_rate = 1e-2
         self.start_learning_rate = 0.01
@@ -116,9 +109,9 @@ class BaseConfiguration:
         self.landmark_detector_type = 'mobilefacenet'  # face_alignment, mobilefacenet
 
         # Embedder options
-        self.train_embedder_names = ['resnet100_magface']
+        self.train_embedder_names = ['resnet50_arcface']
         #self.train_embedder_names = ['resnet100_arcface', 'resnet100_cosface', 'resnet100_magface']
-        self.test_embedder_names = ['resnet100_magface']
+        self.test_embedder_names = ['resnet50_arcface']
         #self.test_embedder_names = ['resnet100_arcface', 'resnet50_arcface', 'resnet34_arcface', 'resnet18_arcface',
         #                            'resnet100_cosface', 'resnet50_cosface', 'resnet34_cosface', 'resnet18_cosface',
         #                            'resnet100_magface']
@@ -156,7 +149,7 @@ class UniversalAttack(BaseConfiguration):
         super(UniversalAttack, self).__init__()
         self.patch_name = 'universal'
         #self.num_of_train_images = 5
-        self.num_of_train_images = 20
+        self.num_of_train_images = 33
         self.train_batch_size = 1
         self.test_batch_size = 32
         #self.test_batch_size = 3

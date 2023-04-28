@@ -14,17 +14,17 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from PIL import Image
 
-import utils
+import utilsD as utils
 import losses
-from config_gan import patch_config_types
+from config_ganD import patch_config_types
 from nn_modules import LandmarkExtractor, FaceXZooProjector, TotalVariation
-from utils import load_embedder, EarlyStopping, get_patch
+from utilsD import load_embedder, EarlyStopping, get_patch
 import skimage.io as io
 
 import pickle
 import torch.nn.functional as F
-from art.estimators.classification.stylegan_encoder import StyleGANEncoder
-from art.estimators.classification.stylegan_generator import StyleGANGenerator
+#from art.estimators.classification.stylegan_encoder import StyleGANEncoder
+#from art.estimators.classification.stylegan_generator import StyleGANGenerator
 
 import torchvision.models as models
 from torch.autograd import Variable
@@ -32,6 +32,8 @@ from torch.autograd import Variable
 from art.config import ART_NUMPY_DTYPE
 from typing import Optional, Union, TYPE_CHECKING
 
+from train_encoder import VGGLoss
+from model import Encoder, Generator, Discriminator
 
 import warnings
 warnings.simplefilter('ignore', UserWarning)
@@ -87,6 +89,7 @@ class AdversarialMask:
         self.train_losses_iter = []
         self.dist_losses = []
         self.tv_losses = []
+        self.tv_losses2 = []
         self.val_losses = []
 
         self.create_folders()
@@ -106,14 +109,10 @@ class AdversarialMask:
         self.latent_z_init_np = None
         self.latent_z_mask = None
         
-        self.latent_neg_z = None
-        self.latent_neg_z2 = None
-        self.latent_neg_z3 = None
-        self.latent_neg_z4 = None
-        self.latent_neg_z5 = None
-        self.latent_neg_z6 = None
-        self.latent_neg_z7 = None
-        self.latent_neg_z8 = None
+        self.latent_neg_z = []
+        #self.latent_neg_number = 18
+        #self.latent_neg_number = 22
+        self.latent_neg_number = 51
 
         #self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask5.png').convert('L')).to(device).unsqueeze(0)
         self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask6.png').convert('L')).to(device).unsqueeze(0)
@@ -198,9 +197,37 @@ class AdversarialMask:
     def train(self):
         #adv_patch_cpu = utils.get_patch(self.config)
         print('----styleganinv_ffhq256---')
-        self.E = StyleGANEncoder('styleganinv_ffhq256')
+        #self.E = StyleGANEncoder('styleganinv_ffhq256')
+        #self.G = StyleGANGenerator('styleganinv_ffhq256')
 
-        self.G = StyleGANGenerator('styleganinv_ffhq256')
+
+
+
+        image_size=256
+        g_model_path = '/face/Mask/stylegan2-encoder-pytorch/checkpoint/generator_ffhq.pt'
+        g_ckpt = torch.load(g_model_path, map_location=device)
+        latent_dim = g_ckpt['args'].latent
+        #self.generator = Generator(image_size, latent_dim, 8).to(device)
+        self.generator = Generator(image_size, latent_dim, 8)
+        self.generator.load_state_dict(g_ckpt["g_ema"], strict=False)
+        self.generator.eval()
+        print('[generator loaded]')
+
+
+        channel_multiplier = g_ckpt['args'].channel_multiplier
+        self.discriminator = Discriminator(image_size, channel_multiplier).to(device)
+        self.discriminator.load_state_dict(g_ckpt["d"], strict=False)
+        self.discriminator.eval()
+        print('[discriminator loaded]')
+
+
+        e_model_path = '/face/Mask/stylegan2-encoder-pytorch/checkpoint/encoder_ffhq.pt'
+        e_ckpt = torch.load(e_model_path, map_location=device)
+        self.encoder = Encoder(image_size, latent_dim).to(device)
+        self.encoder.load_state_dict(e_ckpt['e'])
+        self.encoder.eval()
+        print('[encoder loaded]')
+
 
 
         '''        
@@ -222,14 +249,16 @@ class AdversarialMask:
         print(over)
         '''
 
-        if 0:
+        if 1:
             #latent_z = torch.ones((1, 7168), dtype=torch.float32)
             #latent_z = torch.rand((1, 7168), dtype=torch.float32) - 0.5
-            latent_z = torch.zeros((1, 7168), dtype=torch.float32)
+            latent_z = torch.zeros((24, 512), dtype=torch.float32)
 
             #control_z_np = np.load('/face/Mask/idinvert_pytorch/results/inversion/my_test/inverted_codes.npy').reshape((1, 7168))
             control_z_np = np.load('/face/Mask/idinvert_pytorch/results/inversion/my_test8/inverted_codes.npy').reshape((1, 7168))
             control_z = torch.from_numpy(control_z_np)
+            
+            control_z = torch.zeros((24, 512), dtype=torch.float32)
             self.latent_z_control = control_z.clone()
 
             #control_z_np2 = np.load('/face/Mask/idinvert_pytorch/results/inversion/my_test4/inverted_codes.npy').reshape((1, 7168))
@@ -301,137 +330,12 @@ class AdversarialMask:
             control_z = torch.from_numpy(control_z_np)
             self.latent_z_control = control_z.clone()
 
-            #neg_z_np = np.load('/face/Mask/idinvert_pytorch/results/inversion/my_test10/inverted_codes.npy').reshape((1, 7168))
-            neg_z_np = np.load('latent_z_adv8_.npy')[0].reshape((1, 7168)) 
-            neg_z = torch.from_numpy(neg_z_np)
-            self.latent_neg_z = neg_z.clone()
+            for i in range(self.latent_neg_number):
+                print(i)
+                self.latent_neg_z.append( torch.from_numpy(np.load('latent_z_adv8C_'+str(i+1)+'.npy')[0].reshape((1, 7168))).clone() )
 
-            #neg_z2_np = np.load('latent_z_adv8_2.npy')[0].reshape((1, 7168)) 
-            neg_z2_np = np.load('latent_z_adv8_2_.npy')[0].reshape((1, 7168)) 
-            neg_z2 = torch.from_numpy(neg_z2_np)
-            self.latent_neg_z2 = neg_z2.clone()
+            #self.latent_neg_z18 = torch.from_numpy(np.load('latent_z_adv8C_18.npy')[0].reshape((1, 7168))).clone()
 
-            neg_z3_np = np.load('latent_z_adv8_3.npy')[0].reshape((1, 7168)) 
-            neg_z3 = torch.from_numpy(neg_z3_np)
-            self.latent_neg_z3 = neg_z3.clone()
-
-            neg_z4_np = np.load('latent_z_adv8_4.npy')[0].reshape((1, 7168)) 
-            neg_z4 = torch.from_numpy(neg_z4_np)
-            self.latent_neg_z4 = neg_z4.clone()
-
-            neg_z5_np = np.load('latent_z_adv8_5.npy')[0].reshape((1, 7168)) 
-            neg_z5 = torch.from_numpy(neg_z5_np)
-            self.latent_neg_z5 = neg_z5.clone()
-
-            neg_z6_np = np.load('latent_z_adv8_6.npy')[0].reshape((1, 7168)) 
-            neg_z6 = torch.from_numpy(neg_z6_np)
-            self.latent_neg_z6 = neg_z6.clone()
-
-            neg_z7_np = np.load('latent_z_adv8_7.npy')[0].reshape((1, 7168)) 
-            neg_z7 = torch.from_numpy(neg_z7_np)
-            self.latent_neg_z7 = neg_z7.clone()
-
-            neg_z8_np = np.load('latent_z_adv8_8.npy')[0].reshape((1, 7168)) 
-            neg_z8 = torch.from_numpy(neg_z8_np)
-            self.latent_neg_z8 = neg_z8.clone()
-
-            neg_z9_np = np.load('latent_z_adv8_9.npy')[0].reshape((1, 7168)) 
-            neg_z9 = torch.from_numpy(neg_z9_np)
-            self.latent_neg_z9 = neg_z9.clone()
-
-            neg_z10_np = np.load('latent_z_adv8_10.npy')[0].reshape((1, 7168)) 
-            neg_z10 = torch.from_numpy(neg_z10_np)
-            self.latent_neg_z10 = neg_z10.clone()
-
-            neg_z11_np = np.load('latent_z_adv8_11.npy')[0].reshape((1, 7168))
-            neg_z11 = torch.from_numpy(neg_z11_np)
-            self.latent_neg_z11 = neg_z11.clone()
-
-
-            neg_z12_np = np.load('latent_z_adv8_12.npy')[0].reshape((1, 7168))
-            neg_z12 = torch.from_numpy(neg_z12_np)
-            self.latent_neg_z12 = neg_z12.clone()
-
-
-            neg_z13_np = np.load('latent_z_adv8_13.npy')[0].reshape((1, 7168))
-            neg_z13 = torch.from_numpy(neg_z13_np)
-            self.latent_neg_z13 = neg_z13.clone()
-
-            neg_z14_np = np.load('latent_z_adv8_14.npy')[0].reshape((1, 7168))
-            neg_z14 = torch.from_numpy(neg_z14_np)
-            self.latent_neg_z14 = neg_z14.clone()
-
-            neg_z15_np = np.load('latent_z_adv8_15.npy')[0].reshape((1, 7168))
-            neg_z15 = torch.from_numpy(neg_z15_np)
-            self.latent_neg_z15 = neg_z15.clone()
-
-            neg_z16_np = np.load('latent_z_adv8_16.npy')[0].reshape((1, 7168))
-            neg_z16 = torch.from_numpy(neg_z16_np)
-            self.latent_neg_z16 = neg_z16.clone()
-
-            neg_z17_np = np.load('latent_z_adv8_17.npy')[0].reshape((1, 7168))
-            neg_z17 = torch.from_numpy(neg_z17_np)
-            self.latent_neg_z17 = neg_z17.clone()
-
-            neg_z18_np = np.load('latent_z_adv8_18.npy')[0].reshape((1, 7168))
-            neg_z18 = torch.from_numpy(neg_z18_np)
-            self.latent_neg_z18 = neg_z18.clone()
-
-            neg_z19_np = np.load('latent_z_adv8_19.npy')[0].reshape((1, 7168))
-            neg_z19 = torch.from_numpy(neg_z19_np)
-            self.latent_neg_z19 = neg_z19.clone()
-            
-            neg_z20_np = np.load('latent_z_adv8_20.npy')[0].reshape((1, 7168))
-            neg_z20 = torch.from_numpy(neg_z20_np)
-            self.latent_neg_z20 = neg_z20.clone()
-
-            neg_z21_np = np.load('latent_z_adv8_21.npy')[0].reshape((1, 7168))
-            neg_z21 = torch.from_numpy(neg_z21_np)
-            self.latent_neg_z21 = neg_z21.clone()
-
-            neg_z22_np = np.load('latent_z_adv8_22.npy')[0].reshape((1, 7168))
-            neg_z22 = torch.from_numpy(neg_z22_np)
-            self.latent_neg_z22 = neg_z22.clone()
-
-            neg_z23_np = np.load('latent_z_adv8_23.npy')[0].reshape((1, 7168))
-            neg_z23 = torch.from_numpy(neg_z23_np)
-            self.latent_neg_z23 = neg_z23.clone()
-
-            neg_z24_np = np.load('latent_z_adv8_24.npy')[0].reshape((1, 7168))
-            neg_z24 = torch.from_numpy(neg_z24_np)
-            self.latent_neg_z24 = neg_z24.clone()
-
-            neg_z25_np = np.load('latent_z_adv8_25.npy')[0].reshape((1, 7168))
-            neg_z25 = torch.from_numpy(neg_z25_np)
-            self.latent_neg_z25 = neg_z25.clone()
-
-            neg_z26_np = np.load('latent_z_adv8_26.npy')[0].reshape((1, 7168))
-            neg_z26 = torch.from_numpy(neg_z26_np)
-            self.latent_neg_z26 = neg_z26.clone()
-
-            neg_z27_np = np.load('latent_z_adv8_27.npy')[0].reshape((1, 7168))
-            neg_z27 = torch.from_numpy(neg_z27_np)
-            self.latent_neg_z27 = neg_z27.clone()
-
-            neg_z28_np = np.load('latent_z_adv8_28.npy')[0].reshape((1, 7168))
-            neg_z28 = torch.from_numpy(neg_z28_np)
-            self.latent_neg_z28 = neg_z28.clone()
-
-            neg_z29_np = np.load('latent_z_adv8_29.npy')[0].reshape((1, 7168))
-            neg_z29 = torch.from_numpy(neg_z29_np)
-            self.latent_neg_z29 = neg_z29.clone()
-
-            neg_z30_np = np.load('latent_z_adv8_30.npy')[0].reshape((1, 7168))
-            self.latent_neg_z30 = torch.from_numpy(neg_z30_np).clone()
-
-            neg_z31_np = np.load('latent_z_adv8_31.npy')[0].reshape((1, 7168))
-            self.latent_neg_z31 = torch.from_numpy(neg_z31_np).clone()
-
-            neg_z32_np = np.load('latent_z_adv8_32.npy')[0].reshape((1, 7168))
-            self.latent_neg_z32 = torch.from_numpy(neg_z32_np).clone()
-
-            neg_z33_np = np.load('latent_z_adv8_33.npy')[0].reshape((1, 7168))
-            self.latent_neg_z33 = torch.from_numpy(neg_z33_np).clone()
 
         self.latent_z_init = latent_z.clone()
         self.latent_z_init_np = latent_z.clone().detach().numpy()
@@ -439,10 +343,10 @@ class AdversarialMask:
         #self.latent_z_control = control_z.clone()
 
         
-        latent_z_mask = torch.zeros((1, 7168), dtype=torch.float32)
+        latent_z_mask = torch.ones((24, 512), dtype=torch.float32)
         #latent_z_mask[0][0:512] = torch.ones((512), dtype=torch.float32)
         #latent_z_mask[0][0:512*4] = torch.ones((512*4), dtype=torch.float32)
-        latent_z_mask[0][0:512*14] = torch.ones((512*14), dtype=torch.float32)
+        #latent_z_mask[0][0:512*24] = torch.ones((512*24), dtype=torch.float32)
         #latent_z_mask[0][:] = torch.ones((7168), dtype=torch.float32)
 
         '''  
@@ -462,9 +366,16 @@ class AdversarialMask:
         self.latent_z_mask = latent_z_mask
         
          
-        x_inv = self.G.net.synthesis(latent_z.view(1, 14, 512))
+        #x_inv = self.G.net.synthesis(latent_z.view(1, 14, 512))
+        #print(x_inv.shape)
+        print(device)
+        latent_z = latent_z.cpu()
+        truncation = 0.7
+        trunc = self.generator.mean_latent(4096).detach().clone().cpu()
+        x_inv, _ =  self.generator([latent_z], input_is_latent=True, truncation=truncation, truncation_latent=trunc, randomize_noise=False)
+        x_inv = x_inv.to(device)
         print(x_inv.shape)
-       
+
         '''
         fig = plt.figure()
         #plt.imshow(np.transpose(x_inv[0].cpu().detach().numpy(),[1,2,0]))  #detach() is bad for PGD, but ok for FG
@@ -487,7 +398,7 @@ class AdversarialMask:
         optimizer = optim.SGD([latent_z], lr=self.config.start_learning_rate, momentum=0.9, weight_decay=5e-4)
 
         scheduler = self.config.scheduler_factory(optimizer)
-        early_stop = EarlyStopping(current_dir=self.config.current_dir, patience=self.config.es_patience, init_patch=latent_z)
+        early_stop = EarlyStopping(current_dir=self.config.current_dir, patience=self.config.es_patience, init_patch=latent_z, device=device)
         epoch_length = len(self.train_loader)
 
         #source_id = 4
@@ -501,6 +412,7 @@ class AdversarialMask:
             train_loss = 0.0
             dist_loss = 0.0
             tv_loss = 0.0
+            tv_loss2 = 0.0
             #progress_bar = tqdm(enumerate(self.train_no_aug_loader), desc=f'Epoch {epoch}', total=epoch_length)
             progress_bar = tqdm(enumerate(self.train_loader), desc=f'Epoch {epoch}', total=epoch_length)
             prog_bar_desc = 'train-loss: {:.6}, dist-loss: {:.6}, tv-loss: {:.6}, lr: {:.6}'
@@ -535,7 +447,7 @@ class AdversarialMask:
 
 
                 #tmp_z = latent_z.clone()
-                #tmp_z_np = latent_z.clone().detach().numpy()
+                tmp_z_np = latent_z.clone().detach().numpy()
 
                 cnt += 1
                 (b_loss, sep_loss), vars = self.forward_step(img_batch, latent_z, cls_id, epoch)
@@ -544,6 +456,8 @@ class AdversarialMask:
                 dist_loss += sep_loss[0].item()
                 #tv_loss += sep_loss[1].item()
                 tv_loss += sep_loss[2].item()
+
+                tv_loss2 += sep_loss[3].item()
 
                 optimizer.zero_grad()
                 b_loss.backward()
@@ -573,10 +487,6 @@ class AdversarialMask:
                 latent_z = perturbation + self.latent_z_init
                 '''
 
-                tmp2_z = latent_z.clone().detach().numpy()
-                diff_z = tmp2_z - self.latent_z_init_np
-                #diff_z = tmp2_z - tmp_z_np
-                diff_z_ = np.linalg.norm(diff_z)
 
 
 
@@ -584,19 +494,21 @@ class AdversarialMask:
                                                                   dist_loss / (i_batch + 1),
                                                                   tv_loss / (i_batch + 1),
                                                                   optimizer.param_groups[0]["lr"]))
-                self.train_losses_iter.append(train_loss / (i_batch + 1))
+                #self.train_losses_iter.append(train_loss / (i_batch + 1))
+                self.train_losses_iter.append(dist_loss / (i_batch + 1))
                 #print(epoch_length)
                 #print(cnt)
                 #if i_batch + 1 == epoch_length:
                 #if cnt + 1 == 5:
                 #if cnt  == 10:
                 if cnt  == 1:
-                    print('--diff z: '+ str(diff_z_) )
+                    print('--diff z: '+str(np.linalg.norm(latent_z.detach().numpy() - tmp_z_np)))
                     #print(str(np.max(latent_z.detach().numpy())) + '  '+ str(np.min(latent_z.detach().numpy())) )
                     #print(str(np.linalg.norm(latent_z.detach().numpy()))  )
-                    print(torch.norm( latent_z - self.latent_z_init, p=2 ).detach().numpy())
+                    #print('--norm z : ' + str(torch.norm( latent_z - self.latent_z_init, p=2 ).detach().numpy()))
 
-                    self.save_losses(epoch_length, train_loss, dist_loss, tv_loss)
+                    #self.save_losses(epoch_length, train_loss, dist_loss, tv_loss)
+                    self.save_losses(epoch_length, train_loss, dist_loss, tv_loss, tv_loss2)
                     progress_bar.set_postfix_str(prog_bar_desc.format(self.train_losses_epoch[-1],
                                                                       self.dist_losses[-1],
                                                                       self.tv_losses[-1],
@@ -614,7 +526,8 @@ class AdversarialMask:
         self.save_final_objects()
         utils.plot_train_val_loss(self.config, self.train_losses_epoch, 'Epoch')
         utils.plot_train_val_loss(self.config, self.train_losses_iter, 'Iterations')
-        utils.plot_separate_loss(self.config, self.train_losses_epoch, self.dist_losses, self.tv_losses)
+        #utils.plot_separate_loss(self.config, self.train_losses_epoch, self.dist_losses, self.tv_losses)
+        utils.plot_separate_loss(self.config, self.train_losses_epoch, self.dist_losses, self.tv_losses, self.tv_losses2)
     
     def loss_fn(self, patch_embs, tv_loss, cls_id, latent_z, epoch):
         distance_loss = torch.empty(0, device=device)
@@ -628,6 +541,8 @@ class AdversarialMask:
         #total_loss = - distance_loss + tv_loss
         total_loss = - distance_loss 
 
+
+
         #latent_loss = torch.norm(latent_z - self.latent_z_init, p=2) 
         latent_loss = torch.norm(latent_z - self.latent_z_control, p=2) 
         #latent_loss = torch.norm(latent_z - self.latent_z_control2, p=2) 
@@ -639,334 +554,60 @@ class AdversarialMask:
         #total_loss += 10.0 * latent_loss 
 
 
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) 
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2)
-        #latent_neg_loss = - torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2) - torch.norm(latent_z - self.latent_neg_z7, p=2) 
-        #latent_neg_loss = - 2.0 * torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2) - 2.0 * torch.norm(latent_z - self.latent_neg_z7, p=2) - 2.0* torch.norm(latent_z - self.latent_neg_z8, p=2)
-        latent_neg_loss = - 2.0 * torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2) - 2.0 * torch.norm(latent_z - self.latent_neg_z7, p=2) - 2.0* torch.norm(latent_z - self.latent_neg_z8, p=2) - torch.norm(latent_z - self.latent_neg_z9, p=2) - torch.norm(latent_z - self.latent_neg_z10, p=2) - torch.norm(latent_z - self.latent_neg_z11, p=2) - torch.norm(latent_z - self.latent_neg_z12, p=2) - torch.norm(latent_z - self.latent_neg_z13, p=2) - torch.norm(latent_z - self.latent_neg_z14, p=2) - torch.norm(latent_z - self.latent_neg_z15, p=2) - torch.norm(latent_z - self.latent_neg_z16, p=2) - torch.norm(latent_z - self.latent_neg_z17, p=2)  - torch.norm(latent_z - self.latent_neg_z18, p=2)  - torch.norm(latent_z - self.latent_neg_z19, p=2) - torch.norm(latent_z - self.latent_neg_z20, p=2) - torch.norm(latent_z - self.latent_neg_z21, p=2) - torch.norm(latent_z - self.latent_neg_z22, p=2) - torch.norm(latent_z - self.latent_neg_z23, p=2) - torch.norm(latent_z - self.latent_neg_z24, p=2) - torch.norm(latent_z - self.latent_neg_z25, p=2) - torch.norm(latent_z - self.latent_neg_z26, p=2) - torch.norm(latent_z - self.latent_neg_z27, p=2)  - torch.norm(latent_z - self.latent_neg_z28, p=2) - torch.norm(latent_z - self.latent_neg_z29, p=2) - torch.norm(latent_z - self.latent_neg_z30, p=2) - torch.norm(latent_z - self.latent_neg_z31, p=2) - torch.norm(latent_z - self.latent_neg_z32, p=2) - torch.norm(latent_z - self.latent_neg_z33, p=2)
-        #latent_loss = -latent_neg_loss
+        #latent_neg_loss = - 2.0 * torch.norm(latent_z - self.latent_neg_z, p=2) - torch.norm(latent_z - self.latent_neg_z2, p=2) - torch.norm(latent_z - self.latent_neg_z3, p=2) - torch.norm(latent_z - self.latent_neg_z4, p=2) - torch.norm(latent_z - self.latent_neg_z5, p=2) - torch.norm(latent_z - self.latent_neg_z6, p=2) - 2.0 * torch.norm(latent_z - self.latent_neg_z7, p=2) - 2.0* torch.norm(latent_z - self.latent_neg_z8, p=2) - torch.norm(latent_z - self.latent_neg_z9, p=2) - torch.norm(latent_z - self.latent_neg_z10, p=2) - torch.norm(latent_z - self.latent_neg_z11, p=2) - torch.norm(latent_z - self.latent_neg_z12, p=2) - torch.norm(latent_z - self.latent_neg_z13, p=2) - torch.norm(latent_z - self.latent_neg_z14, p=2) - torch.norm(latent_z - self.latent_neg_z15, p=2) - torch.norm(latent_z - self.latent_neg_z16, p=2) - torch.norm(latent_z - self.latent_neg_z17, p=2)  - torch.norm(latent_z - self.latent_neg_z18, p=2)  - torch.norm(latent_z - self.latent_neg_z19, p=2) - torch.norm(latent_z - self.latent_neg_z20, p=2) - torch.norm(latent_z - self.latent_neg_z21, p=2) - torch.norm(latent_z - self.latent_neg_z22, p=2) - torch.norm(latent_z - self.latent_neg_z23, p=2) - torch.norm(latent_z - self.latent_neg_z24, p=2) - torch.norm(latent_z - self.latent_neg_z25, p=2) - torch.norm(latent_z - self.latent_neg_z26, p=2) - torch.norm(latent_z - self.latent_neg_z27, p=2)  - torch.norm(latent_z - self.latent_neg_z28, p=2) - torch.norm(latent_z - self.latent_neg_z29, p=2) - torch.norm(latent_z - self.latent_neg_z30, p=2) - torch.norm(latent_z - self.latent_neg_z31, p=2) - torch.norm(latent_z - self.latent_neg_z32, p=2) - torch.norm(latent_z - self.latent_neg_z33, p=2)
 
 
+        #rad = 8
+        rad = 8
+        #total_loss += 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z1, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z2, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z3, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z4, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z5, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z6, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z7, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z8, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z9, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z10, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z11, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z12, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z13, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z14, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z15, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z16, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z17, p=2), min=0) + 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z18, p=2), min=0)
 
-        total_loss += 10.0* torch.clamp( torch.norm( latent_z - self.latent_z_init, p=2 ) - 50, min=0)
+        '''
+        neg_loss=0
+        for i in range(self.latent_neg_number):
+            #self.latent_neg_z[i] = torch.from_numpy(np.load('latent_z_adv8C_'+str(i+1)+'.npy')[0].reshape((1, 7168))).clone()
+            #total_loss += 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z[i], p=2), min=0)
+            neg_loss += 10*torch.clamp( rad -torch.norm(latent_z - self.latent_neg_z[i], p=2), min=0)
 
+        total_loss += neg_loss
+        total_loss += 10*torch.clamp( torch.norm( latent_z - self.latent_z_init, p=2 ) - 10, min=0)
 
-        #total_loss = 0 
-        #if epoch > 100:
-        if epoch > 50:
-            #total_loss += 0.3* torch.norm( latent_z, p=2 )
-
-
-            #total_loss += 0.5 * latent_loss 
-            #total_loss += 1.0 * latent_loss 
-            #total_loss += 0.5 * latent_loss 
-            
-            #total_loss += 0.05 * latent_neg_loss 
-            total_loss += 0.08 * latent_neg_loss 
-            #total_loss += 0.3 * latent_neg_loss 
-        else:
-            #total_loss += 0.3* torch.norm( latent_z, p=2 )
-
-
-            #total_loss += 0.1 * latent_loss 
-            #total_loss += 1.0 * latent_loss 
-            #total_loss += 0.5 * latent_loss
-
-            total_loss += 0.1 * latent_neg_loss 
-            #total_loss += 0.3 * latent_neg_loss 
-
+        latent_loss = torch.norm( latent_z - self.latent_z_init, p=2 ) 
+        latent_loss2 = neg_loss 
+        '''
+        '''
         #if epoch ==100:
         #if epoch ==50:
-        if epoch ==240:
-        #if epoch ==100:
+        #if epoch ==240:
+        #if epoch ==640:
+        if epoch ==400:
             latent_z_np = latent_z.clone().detach().numpy()
-        #    #np.save('latent_z_adv8_2_.npy', latent_z_np)
-        #    #np.save('latent_z_adv8_3.npy', latent_z_np)
-        #    np.save('latent_z_adv8_4.npy', latent_z_np)
-        #    np.save('latent_z_adv8_5.npy', latent_z_np)
-        #    np.save('latent_z_adv8_6.npy', latent_z_np)
-        #    np.save('latent_z_adv8_7.npy', latent_z_np)
-        #    np.save('latent_z_adv8_8.npy', latent_z_np)
-        #    np.save('latent_z_adv8_9.npy', latent_z_np)
-        #    np.save('latent_z_adv8_10.npy', latent_z_np)
-        #    np.save('latent_z_adv8_11.npy', latent_z_np)
-        #    np.save('latent_z_adv8_12.npy', latent_z_np)
-        #    np.save('latent_z_adv8_13.npy', latent_z_np)
-        #    np.save('latent_z_adv8_14.npy', latent_z_np)
-        #    np.save('latent_z_adv8_15.npy', latent_z_np)
-        #    np.save('latent_z_adv8_16.npy', latent_z_np)
-        #    np.save('latent_z_adv8_17.npy', latent_z_np)
-        #    np.save('latent_z_adv8_18.npy', latent_z_np)
-        #    np.save('latent_z_adv8_19.npy', latent_z_np)
-        #    np.save('latent_z_adv8_20.npy', latent_z_np)
-        #    np.save('latent_z_adv8_21.npy', latent_z_np)
-        #    np.save('latent_z_adv8_22.npy', latent_z_np)
-        #    np.save('latent_z_adv8_23.npy', latent_z_np)
-        #    np.save('latent_z_adv8_24.npy', latent_z_np)
-        #    np.save('latent_z_adv8_25.npy', latent_z_np)
-        #    np.save('latent_z_adv8_26.npy', latent_z_np)
-        #    np.save('latent_z_adv8_27.npy', latent_z_np)
-        #    np.save('latent_z_adv8_28.npy', latent_z_np)
-        #    np.save('latent_z_adv8_29.npy', latent_z_np)
-        #    np.save('latent_z_adv8_30.npy', latent_z_np)
-        #    np.save('latent_z_adv8_31.npy', latent_z_np)
-        #    np.save('latent_z_adv8_32.npy', latent_z_np)
-        #    np.save('latent_z_adv8_33.npy', latent_z_np)
-        #    np.save('latent_z_adv8_34.npy', latent_z_np)
+            np.save('latent_z_adv8C_'+str(self.latent_neg_number+1)+'.npy', latent_z_np)
+        '''
 
         '''
-        total_loss = 0
-        if epoch >200:
-            total_loss = - distance_loss
+        if epoch ==250:
+        #if epoch ==400:
+            latent_z_np = latent_z.clone().detach().numpy()
+            np.save('latent_z_adv8C_'+str(self.latent_neg_number+1)+'.npy', latent_z_np)
+        elif epoch ==640:
+            latent_z_np = latent_z.clone().detach().numpy()
+            np.save('latent_z_adv8C_'+str(self.latent_neg_number+2)+'.npy', latent_z_np)
 
-            total_loss += 0.0 * latent_loss
-
-        elif epoch > 50:
-            total_loss = - distance_loss
-
-            #total_loss += 0.5 * latent_loss 
-            total_loss += 1.0 * latent_loss
-            #total_loss += 0.3 * latent_loss 
-        else:
-            total_loss = - distance_loss
-            #total_loss += 0.1 * latent_loss 
-            total_loss += 0.0 * latent_loss
-
-            #total_loss += 1.0 * latent_loss 
-            #total_loss += 5.0 * latent_neg_loss 
+        
+        elif epoch ==520:
+            latent_z_np = latent_z.clone().detach().numpy()
+            np.save('latent_z_adv8C_'+str(self.latent_neg_number+3)+'.npy', latent_z_np)
+        elif epoch ==640:
+            latent_z_np = latent_z.clone().detach().numpy()
+            np.save('latent_z_adv8C_'+str(self.latent_neg_number+4)+'.npy', latent_z_np)
         '''
+
+
 
         '''        
-        if epoch == 0:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep0_.npy', latent_z_np)
-
-        if epoch == 1:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep1_.npy', latent_z_np)
-
-        if epoch == 2:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep2_.npy', latent_z_np)
-
-
-        if epoch == 3:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep3_.npy', latent_z_np)
-
-        if epoch == 4:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep4_.npy', latent_z_np)
-
-        if epoch == 5:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep5_.npy', latent_z_np)
-
-        if epoch == 6:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep6_.npy', latent_z_np)
-
-        if epoch == 7:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep7_.npy', latent_z_np)
-
-        if epoch == 8:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep8_.npy', latent_z_np)
-
-        if epoch == 9:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep9_.npy', latent_z_np)
-
-
-        if epoch == 10:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep10_.npy', latent_z_np)
-          
-        if epoch == 11:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep11_.npy', latent_z_np)
-          
-        if epoch == 12:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep12_.npy', latent_z_np)
-          
-          
-        if epoch == 13:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep13_.npy', latent_z_np)
-          
-        if epoch == 14:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep14_.npy', latent_z_np)
-          
-
-        if epoch == 15:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep15_.npy', latent_z_np)
-          
-        if epoch == 16:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep16_.npy', latent_z_np)
-          
-        if epoch == 17:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep17_.npy', latent_z_np)
-        ''' 
         '''
-        if epoch == 50:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep50.npy', latent_z_np)
-            latent_z_control_np = self.latent_z_control.clone().detach().numpy()
-            np.save('latent_z_control_ep50.npy', latent_z_control_np)
-            np.save('latent_z_init_ep50.npy', self.latent_z_init_np)
-
-        if epoch == 49:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep49.npy', latent_z_np)
-
-        if epoch == 48:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep48.npy', latent_z_np)
-
-        if epoch == 47:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep47.npy', latent_z_np)
-
-
-        if epoch == 51:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep51.npy', latent_z_np)
-
-        if epoch == 52:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep52.npy', latent_z_np)
-
-        if epoch == 53:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep53.npy', latent_z_np)
-
-        if epoch == 54:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep54.npy', latent_z_np)
-
-        if epoch == 55:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep55.npy', latent_z_np)
-
-        if epoch == 56:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep56.npy', latent_z_np)
-
-        if epoch == 57:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep57.npy', latent_z_np)
-
-
-        if epoch == 58:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep58.npy', latent_z_np)
-
-        if epoch == 59:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep59.npy', latent_z_np)
-
-        if epoch == 60:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep60.npy', latent_z_np)
-
-        if epoch == 61:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep61.npy', latent_z_np)
-
-        if epoch == 62:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep62.npy', latent_z_np)
-
-        if epoch == 63:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep63.npy', latent_z_np)
-
-
-
-
-        if epoch == 64:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep64.npy', latent_z_np)
-
-        if epoch == 65:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep65.npy', latent_z_np)
-
-        if epoch == 66:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep66.npy', latent_z_np)
-        '''
-
-
-
-        '''
-        if epoch == 100:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep100.npy', latent_z_np)
-            latent_z_control_np = self.latent_z_control.clone().detach().numpy()
-            np.save('latent_z_control_ep100.npy', latent_z_control_np)
-            np.save('latent_z_init_ep100.npy', self.latent_z_init_np)
-
-        if epoch == 98:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep98.npy', latent_z_np)
-
-        if epoch == 99:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep99.npy', latent_z_np)
-
-        if epoch == 97:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep97.npy', latent_z_np)
-
-        if epoch == 101:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep101.npy', latent_z_np)
-        if epoch == 102:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep102.npy', latent_z_np)
-        if epoch == 103:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep103.npy', latent_z_np)
-
-        if epoch == 104:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep104.npy', latent_z_np)
-
-        if epoch == 105:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep105.npy', latent_z_np)
-        if epoch == 106:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep106.npy', latent_z_np)
-        if epoch == 110:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep110.npy', latent_z_np)
-        
-        if epoch == 0:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep0.npy', latent_z_np)
-        if epoch == 1:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep1.npy', latent_z_np)
-        if epoch == 2:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep2.npy', latent_z_np)
-        if epoch == 3:
-            latent_z_np = latent_z.clone().detach().numpy()
-            np.save('latent_z_ep3.npy', latent_z_np)
-        '''
-        return total_loss, [distance_loss, tv_loss, latent_loss]
+        #return total_loss, [distance_loss, tv_loss, latent_loss]
+        return total_loss, [distance_loss, tv_loss, latent_loss, latent_loss]
     
 
     def forward_step(self, img_batch, latent_z, cls_id, epoch):
@@ -1000,7 +641,12 @@ class AdversarialMask:
         #adv_patch = adv_patch_cpu.to(device)
         latent_z = self.latent_z_init * (1-self.latent_z_mask) + latent_z * self.latent_z_mask
 
-        x_inv = self.G.net.synthesis(latent_z.view(1, 14, 512))
+        #x_inv = self.G.net.synthesis(latent_z.view(1, 14, 512))
+        latent_z = latent_z.cpu()
+        truncation = 0.7
+        trunc = self.generator.mean_latent(4096).detach().clone().cpu()
+        x_inv, _ =  self.generator([latent_z], input_is_latent=True, truncation=truncation, truncation_latent=trunc, randomize_noise=False)
+        x_inv = x_inv.to(device)
 
         if 0: #zoom in 
             x_inv= F.interpolate(x_inv, (140, 140))
@@ -1010,9 +656,9 @@ class AdversarialMask:
 
 
         #print(adv_patch.shape)
-        adv_patch = (adv_patch - self.G.min_val) * 255 / (self.G.max_val - self.G.min_val)
-        adv_patch = torch.clip( adv_patch + 0.5, 0, 255)/255.
-
+        #adv_patch = (adv_patch - self.G.min_val) * 255 / (self.G.max_val - self.G.min_val)
+        #adv_patch = torch.clip( adv_patch + 0.5, 0, 255)/255.
+        adv_patch = adv_patch.clamp_(-1., 1.) *0.5 + 0.5
 
         cls_id = cls_id.to(device)
 
@@ -1021,6 +667,7 @@ class AdversarialMask:
         #img_batch_applied = self.fxz_projector(img_batch, preds, adv_patch, self.blue_mask_t[:, 3], is_3d=True, do_aug=self.config.mask_aug)
         #img_batch_applied = self.fxz_projector(img_batch, preds, adv_patch, self.mask_t, is_3d=True, do_aug=self.config.mask_aug)
         #img_batch_applied = adv_patch
+
         img_batch_applied = img_batch * (1 - self.patch_mask) + adv_patch * self.patch_mask
 
         '''  
@@ -1043,18 +690,26 @@ class AdversarialMask:
 
         return loss, [img_batch, adv_patch, img_batch_applied, patch_embs, tv_loss]
 
-    def save_losses(self, epoch_length, train_loss, dist_loss, tv_loss):
+    #def save_losses(self, epoch_length, train_loss, dist_loss, tv_loss):
+    def save_losses(self, epoch_length, train_loss, dist_loss, tv_loss, tv_loss2):
         train_loss /= epoch_length
         dist_loss /= epoch_length
         tv_loss /= epoch_length
+        tv_loss2 /= epoch_length
         self.train_losses_epoch.append(train_loss)
         self.dist_losses.append(dist_loss)
         self.tv_losses.append(tv_loss)
+        self.tv_losses2.append(tv_loss2)
 
     def save_final_objects(self):
         alpha = transforms.ToTensor()(Image.open('../prnet/new_uv.png').convert('L'))
         #final_patch = torch.cat([self.best_patch.squeeze(0), alpha])
-        final_patch = self.G.net.synthesis(self.best_patch.view(1, 14, 512))
+        #final_patch = self.G.net.synthesis(self.best_patch.view(1, 14, 512))
+        self.best_patch = self.best_patch.cpu()
+        truncation = 0.7
+        trunc = self.generator.mean_latent(4096).detach().clone().cpu()
+        x_inv, _ =  self.generator([self.best_patch], input_is_latent=True, truncation=truncation, truncation_latent=trunc, randomize_noise=False)
+        final_patch = x_inv.to(device)
 
         #final_patch = F.interpolate(final_patch, (112, 112))
         if 0: #zoom in
@@ -1064,9 +719,11 @@ class AdversarialMask:
             final_patch = F.interpolate(final_patch, (112, 112))
 
 
+        #need?
+        #final_patch = self.G.postprocess(_get_tensor_value(final_patch))
+        #final_patch = torch.from_numpy(final_patch).permute(0,3,1,2)/255.
+        final_patch = final_patch.clamp_(-1., 1.).detach().squeeze()*0.5 + 0.5
 
-        final_patch = self.G.postprocess(_get_tensor_value(final_patch))
-        final_patch = torch.from_numpy(final_patch).permute(0,3,1,2)/255.
 
         print(final_patch.shape)
         print(self.patch_mask.shape)

@@ -13,10 +13,6 @@ embedders_dict = {
             },
             'cosface': {
                 'weights_path': os.path.join('..', 'face_recognition', 'insightface_torch', 'weights', 'glint360k_cosface_resnet18.pth')
-            },
-            'magface': {
-                'weights_path': os.path.join('..', 'face_recognition', 'magface_torch', 'weights',
-                                             'magface_iresnet18_casia_dp.pth')
             }
         }
     },
@@ -84,7 +80,8 @@ class BaseConfiguration:
         self.celeb_lab = os.listdir(self.train_img_dir)[:self.train_number_of_people]
         self.celeb_lab_mapper = {i: lab for i, lab in enumerate(self.celeb_lab)}
         #self.num_of_train_images = 5
-        self.num_of_train_images = 10
+        #self.num_of_train_images = 10
+        self.num_of_train_images = 1
 
         self.shuffle = True
         self.img_size = (112, 112)
@@ -98,30 +95,53 @@ class BaseConfiguration:
         self.initial_patch = 'white'  # body, white, random, stripes, l_stripes
         #self.initial_patch = 'grey'  # body, white, random, stripes, l_stripes
         #self.initial_patch = 'init'  # body, white, random, stripes, l_stripes
-        self.epochs = 100
+        #self.epochs = 450
+        self.epochs = 1000
+        #self.epochs = 20
         #self.start_learning_rate = 1e-2
-        self.start_learning_rate = 0.01
+        #self.start_learning_rate = 0.01
+        #self.start_learning_rate = 0.05
+        self.start_learning_rate = 0.1
+        #self.start_learning_rate = 0.001
+
         #self.start_learning_rate = 1e-1
         #self.es_patience = 7
         self.es_patience = 30
         #self.sc_patience = 2
         self.sc_patience = 20
         self.sc_min_lr = 1e-6
+
+        '''
         self.scheduler_factory = lambda optimizer: optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                                                         patience=self.sc_patience,
                                                                                         min_lr=self.sc_min_lr,
                                                                                         mode='min')
+        '''
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[200, 300, 350], gamma=0.1)
 
         # Landmark detection options
         self.landmark_detector_type = 'mobilefacenet'  # face_alignment, mobilefacenet
 
         # Embedder options
-        self.train_embedder_names = ['resnet100_magface']
-        #self.train_embedder_names = ['resnet100_arcface', 'resnet100_cosface', 'resnet100_magface']
-        self.test_embedder_names = ['resnet100_magface']
+        #self.train_embedder_names = ['resnet100_magface']
+        #self.train_embedder_names = ['resnet18_arcface']
+        self.train_embedder_names = ['resnet50_arcface']
+
+
+
+        #self.test_embedder_names = ['resnet50_arcface']
+        self.test_embedder_names = ['resnet100_arcface', 'resnet50_arcface', 'resnet34_arcface', 'resnet18_arcface',
+                                    'resnet100_cosface', 'resnet50_cosface', 'resnet34_cosface', 'resnet18_cosface',
+                                    'resnet100_magface', 'resnet50_magface', 'resnet18_magface']
+                                    #'resnet100_magface', 'resnet18_magface']
+
+
+
         #self.test_embedder_names = ['resnet100_arcface', 'resnet50_arcface', 'resnet34_arcface', 'resnet18_arcface',
-        #                            'resnet100_cosface', 'resnet50_cosface', 'resnet34_cosface', 'resnet18_cosface',
+        #                            'resnet100_cosface', 'resnet18_cosface',
         #                            'resnet100_magface']
+
+
 
         # Loss options
         self.dist_loss_type = 'cossim'
@@ -133,6 +153,8 @@ class BaseConfiguration:
         self.masks_path = os.path.join('..', 'data', 'masks')
         self.random_mask_path = os.path.join(self.masks_path, 'random.png')
         self.blue_mask_path = os.path.join(self.masks_path, 'blue.png')
+        self.full_mask_path = os.path.join(self.masks_path, 'full.png')
+
         self.black_mask_path = os.path.join(self.masks_path, 'black.png')
         self.white_mask_path = os.path.join(self.masks_path, 'white.png')
         self.face1_mask_path = os.path.join(self.masks_path, 'face1.png')
@@ -155,8 +177,9 @@ class UniversalAttack(BaseConfiguration):
     def __init__(self):
         super(UniversalAttack, self).__init__()
         self.patch_name = 'universal'
-        #self.num_of_train_images = 5
-        self.num_of_train_images = 20
+        #self.num_of_train_images = 10
+        self.num_of_train_images = 1
+        #self.num_of_train_images = 20
         self.train_batch_size = 1
         self.test_batch_size = 32
         #self.test_batch_size = 3

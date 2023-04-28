@@ -3,11 +3,11 @@ import os
 sys.path.append('/face/Mask/AdversarialMask')
 
 import warnings
-import utils
+import utils 
 import torch
 from nn_modules import LandmarkExtractor, FaceXZooProjector
 
-from config_gan import patch_config_types
+from config_gan_bb import patch_config_types
 from torchvision import transforms
 from PIL import Image
 import numpy as np
@@ -24,7 +24,7 @@ import pandas as pd
 matplotlib.use('TkAgg')
 import skimage.io as io
 import torch.nn.functional as F
-
+import cv2
 
 global device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -60,7 +60,7 @@ class Evaluator:
         self.mask_t = transforms.ToTensor()(Image.open('../prnet/new_uvT.png').convert('L'))
 
 
-        #self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask5.png').convert('L')).to(device).unsqueeze(0)
+
         self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask6.png').convert('L')).to(device).unsqueeze(0)
         self.patch_mask = F.interpolate(self.patch_mask, (112, 112))
 
@@ -288,98 +288,181 @@ class Evaluator:
 def main():
     mode = 'universal'
     config = patch_config_types[mode]()
-    #adv_mask = Image.open('../data/masks/final_patch.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/12-10-2022_11-22-59/final_results/final_patch.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/13-10-2022_21-33-08/final_results/final_patch.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_08-32-29/saved_patches/patch_94.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_09-26-47/saved_patches/patch_90.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_11-42-50/saved_patches/patch_94.png').convert('RGB')
+
+    ########## zhu
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/1_001_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/1_000_aligned.png').convert('RGB') #full face
+    #img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/007_aligned.png').convert('RGB')
 
 
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_16-11-41/saved_patches/patch_33.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_16-22-22/saved_patches/patch_33.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_16-36-20/saved_patches/patch_99.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_17-01-26/saved_patches/patch_96.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_17-26-31/saved_patches/patch_95.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_17-52-30/saved_patches/patch_33.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_18-00-51/saved_patches/patch_85.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_18-41-28/saved_patches/patch_94.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_20-21-39/saved_patches/patch_80.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/21-10-2022_21-02-24/saved_patches/patch_98.png').convert('RGB')
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/4_000_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/12-03-2023_21-48-54/final_results/final_patch.png').convert('RGB') #zhao init 2layer + stn
+    #img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/007_aligned.png').convert('RGB')
 
-    #gan wrong
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_08-54-49/saved_patches/patch_97.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_09-54-40/saved_patches/patch_96.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_10-27-06/saved_patches/patch_94.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_10-56-52/saved_patches/patch_94.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_12-49-32/saved_patches/patch_98.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_13-36-52/saved_patches/patch_94.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_14-20-32/saved_patches/patch_95.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_14-45-29/saved_patches/patch_96.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_15-15-05/saved_patches/patch_94.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/22-10-2022_15-47-38/saved_patches/patch_94.png').convert('RGB')
-
-
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/01-11-2022_08-49-44/saved_patches/patch_94.png').convert('RGB') #niu_14layer
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/01-11-2022_09-33-22/saved_patches/patch_98.png').convert('RGB') #niu_2layer
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/01-11-2022_10-00-32/saved_patches/patch_90.png').convert('RGB') #niu_7layer
-
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/01-11-2022_10-32-53/saved_patches/patch_94.png').convert('RGB') #random_14layer
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/01-11-2022_10-32-53/final_results/final_patch.png').convert('RGB') 
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/01-11-2022_11-38-39/final_results/final_patch.png').convert('RGB') #random_14layer + stn
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/01-11-2022_10-56-57/saved_patches/patch_97.png').convert('RGB') #random_2layer
-
-
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/30-10-2022_17-59-00/saved_patches/patch_295.png').convert('RGB') #johnny init 2 layer
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/30-10-2022_19-19-32/saved_patches/patch_98.png').convert('RGB') #14 layer
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/30-10-2022_19-46-59/saved_patches/patch_98.png').convert('RGB') #7 layer
-
-
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/31-10-2022_15-11-36/saved_patches/patch_94.png').convert('RGB') #zhao init 14layer w/o stn
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/31-10-2022_15-26-42/saved_patches/patch_96.png').convert('RGB') #zhao init 2layer w/o stn
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/31-10-2022_15-43-15/saved_patches/patch_99.png').convert('RGB') #zhao init 14layer + stn
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/01-11-2022_12-06-53/final_results/final_patch.png').convert('RGB') #zhao_14layer + stn
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/October/31-10-2022_16-48-19/saved_patches/patch_90.png').convert('RGB') #zhao init 2layer + stn
     
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/7_000_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/7_100_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/7_101_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/10-03-2023_09-46-13/final_results/final_patch.png').convert('RGB') #zhao init 2layer + stn
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/10-03-2023_18-38-42/final_results/final_patch.png').convert('RGB') #zhao init 2layer + stn
+    #img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/007_aligned.png').convert('RGB')
+
+
+    ####### qiu
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/3_000_aligned.png').convert('RGB') #full face
+    #img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/010_aligned.png').convert('RGB')
+
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/8_000_aligned.png').convert('RGB') #full face
+    #img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/010_aligned.png').convert('RGB')
+
     
+    ######### liu
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/2_000_aligned.png').convert('RGB') #full face
+    #img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/003_aligned.png').convert('RGB')
 
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/24-11-2022_16-19-21/final_results/final_patch.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/5_000_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/5_001_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/5_002_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/5_003_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/5_004_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/5_100_aligned.png').convert('RGB') #full face
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/09-03-2023_17-54-59/final_results/final_patch.png').convert('RGB') #zhao init 2layer + stn
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/10-03-2023_18-47-07/final_results/final_patch.png').convert('RGB') #zhao init 2layer + stn
+    #img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/003_aligned.png').convert('RGB')
 
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/25-11-2022_11-03-22/saved_patches/patch_30.png').convert('RGB') #full face
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/25-11-2022_11-03-22/saved_patches/patch_45.png').convert('RGB') #full face
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/29-11-2022_15-41-32/saved_patches/patch_43.png').convert('RGB') #full face
-    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/November/30-11-2022_21-48-08/saved_patches/patch_43.png').convert('RGB') #full face
+
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/6_000_aligned.png').convert('RGB') #full face
+    #img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/003_aligned.png').convert('RGB')
 
 
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/October/04-10-2022_10-49-24/final_results/final_patch.png').convert('RGB')
-    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/October/04-10-2022_11-13-25/final_results/final_patch.png').convert('RGB')
+
+    ####### no GAN
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/13-03-2023_17-33-21/final_results/final_patch.png').convert('RGB') #grey it=100  tar=yuyoujiang src=liu
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/13-03-2023_17-47-50/final_results/final_patch.png').convert('RGB') #grey it=1000
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/13-03-2023_17-53-07/final_results/final_patch.png').convert('RGB') #grey tv*10
+    img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/003_aligned.png').convert('RGB')
+ 
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/20-03-2023_18-29-42/final_results/final_patch.png').convert('RGB') #grey tv*10
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/20-03-2023_19-52-30/final_results/final_patch.png').convert('L') #grey tv*10
+    img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735_nio2_/088_aligned.png').convert('RGB')
+    img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735_nio2_/112_aligned.png').convert('RGB')
+
+
+    #zhu
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/22-03-2023_14-24-53/final_results/final_patch.png').convert('RGB') #zhao init 2layer + stn
+    img = Image.open('/face/Mask/idinvert_pytorch/examples/r256/007_aligned.png').convert('RGB')
+
+
+
+    #lh
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/21-03-2023_10-50-55/final_results/final_patch.png').convert('RGB') #grey tv*10
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/21-03-2023_10-50-55/final_results/final_patch.png').convert('L') #grey tv*10
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/21-03-2023_21-27-44/final_results/final_patch.png').convert('RGB') #batch_gray 
+    
+    #large
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/31-03-2023_10-55-48/final_results/final_patch.png').convert('RGB') # w/ tv
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/March/31-03-2023_11-18-55/final_results/final_patch.png').convert('RGB') # w/ tv
+
+
+
+    #mask3
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/03-04-2023_09-21-05/final_results/final_patch.png').convert('RGB') # w/o contrastive
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/03-04-2023_17-51-17/final_results/final_patch.png').convert('RGB') # w/ contrastive
+
+    #mask7
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/03-04-2023_18-17-46/final_results/final_patch.png').convert('RGB') # w/ contrastive
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/03-04-2023_18-27-32/final_results/final_patch.png').convert('RGB') # w/o contrastive
+
+    #contrastive
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/03-04-2023_17-15-15/final_results/final_patch.png').convert('RGB') # con=0.01
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/03-04-2023_17-20-04/final_results/final_patch.png').convert('RGB') # con=10
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/03-04-2023_17-26-49/final_results/final_patch.png').convert('RGB') # con=10, [0, 2]
+
+
+
+
+    # good stn res50 arcface
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/05-04-2023_17-40-06/final_results/final_patch.png').convert('RGB') # con=0.01 stn
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/07-04-2023_14-13-09/final_results/final_patch.png').convert('RGB') # con=0.01 stn mask9
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/07-04-2023_14-47-17/final_results/final_patch.png').convert('RGB') # con=0.01 stn mask10
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/09-04-2023_10-50-22/final_results/final_patch.png').convert('RGB') # con=10 stn mask10
+
+
+    # blackbox
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/12-04-2023_09-36-47/final_results/final_patch.png').convert('RGB') # stn mask10 xface100
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/13-04-2023_11-42-22/final_results/final_patch.png').convert('RGB') # stn mask10 all but not mag
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/13-04-2023_13-48-33/final_results/final_patch.png').convert('RGB') # stn mask9 all but not mag
+
+
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/13-04-2023_17-11-46/final_results/final_patch.png').convert('RGB') # stn mask9 full + mag
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/17-04-2023_09-49-04/final_results/final_patch.png').convert('RGB') # stn mask10 full + mag
+    img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/085_aligned.png').convert('RGB')
+
+
+
+
+
+
+
+
+
+
+
+
+    #lh
+
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/--b1_aligned.png').convert('RGB') # weight=10
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/--s1_aligned.png').convert('RGB') # weight=0.01
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/T1_aligned.png').convert('RGB') # T 
+
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/full2_aligned.png').convert('RGB') #gray full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/yj1.jpg').convert('RGB') #gray full face
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/eye_b_aligned.png').convert('RGB') #
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/lh-t_aligned.png').convert('RGB') #
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/lh-full.png').convert('RGB') #
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/yyj2_aligned.png').convert('RGB') #
+    #adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/lh-con_aligned.png').convert('RGB') #
+    adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/stn2_aligned.png').convert('RGB') #
+    adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/stn10_aligned.png').convert('RGB') #
+    adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/mm9_aligned.png').convert('RGB') #
+
+    adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/bb_9_p_aligned.png').convert('RGB') #
+    adv_mask = Image.open('/face/Mask/idinvert_pytorch/examples/r256/examples/bb_9_s_aligned.png').convert('RGB') #
+
+    img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/085_aligned.png').convert('RGB')
+
+
+
+
+
+
+
+
     adv_mask_t = transforms.ToTensor()(adv_mask).unsqueeze(0)
     adv_mask_t = F.interpolate(adv_mask_t, (112, 112))
     print('Starting test...', flush=True)
     evaluator = Evaluator(config, adv_mask_t)
     
-    #img = Image.open('./john_hat_aligned.png').convert('RGB')
-    #img = Image.open('/art/adversarial-robustness-toolbox/examples/dataset/img32_aligned.png').convert('RGB')
-    img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/011_aligned.png').convert('RGB')
-    #img = Image.open('/face/Mask/AdversarialMask/datasets/advmask_aligned.png').convert('RGB')
-    #img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/0005238/047_aligned.png').convert('RGB')
-    imgP = Image.open('/face/Mask/AdversarialMask/datasets/012_aligned.png').convert('RGB')
-    imgP2 = Image.open('/face/Mask/AdversarialMask/datasets/009_aligned.png').convert('RGB')
 
-    img2 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960_align/001_aligned.png').convert('RGB')
-    img3 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960_align/002_aligned.png').convert('RGB')
-    img4 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960_align/003_aligned.png').convert('RGB')
-    img5 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960_align/004_aligned.png').convert('RGB')
-    img6 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960_align/005_aligned.png').convert('RGB')
-    img7 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960_align/006_aligned.png').convert('RGB')
-    #img2 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/0001152/110_aligned.png').convert('RGB')
+    img2 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/058_aligned.png').convert('RGB')
+    img3 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/001_aligned.png').convert('RGB')
+    img4 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/008_aligned.png').convert('RGB')
+    img5 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/012_aligned.png').convert('RGB')
+    img6 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/015_aligned.png').convert('RGB')
+    img7 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/049_aligned.png').convert('RGB')
+    img8 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/053_aligned.png').convert('RGB')
+    img9 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/058_aligned.png').convert('RGB')
+    img10 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/059_aligned.png').convert('RGB')
+    img11 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/077_aligned.png').convert('RGB')
+    img12 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/081_aligned.png').convert('RGB')
+
+
 
     img_np = np.transpose(np.array(img, dtype=np.float32)/255., [2,0,1])
     img_np = np.expand_dims(img_np,0)
     img_t = torch.from_numpy(img_np).to(device)
     img_input = F.interpolate(img_t, (112, 112))
     img_applied = evaluator.apply_all_masks(img_input)
-
     img_applied_ = img_applied.unsqueeze(0)
     all_embeddings = evaluator.get_all_embeddings(img_input, img_applied_)
     embeddings = all_embeddings['resnet50_arcface']
@@ -388,27 +471,19 @@ def main():
     #print(np.sum( embeddings[1]*embeddings[1] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings[0]) ))
 
 
-    imgP_np = np.transpose(np.array(imgP, dtype=np.float32)/255., [2,0,1])
-    imgP_np = np.expand_dims(imgP_np,0)
-    imgP_t = torch.from_numpy(imgP_np).to(device)
-    imgP_input = F.interpolate(imgP_t, (112, 112))
-    imgP_applied = evaluator.apply_all_masks(imgP_input)
-    imgP_applied_ = imgP_applied.unsqueeze(0)
-    allP_embeddings = evaluator.get_all_embeddings(imgP_input, imgP_applied_)
-    embeddingsP = allP_embeddings['resnet50_arcface']
-    cosP = np.sum( embeddings[0]*embeddingsP[0] )/ (np.linalg.norm(embeddings[0]) *np.linalg.norm(embeddingsP[0]) )
+    network_cfg = 'resnet100_arcface'
+    #network_cfg = 'resnet50_arcface'
+    #network_cfg = 'resnet34_arcface'
+    #network_cfg = 'resnet18_arcface'
 
-    imgP2_np = np.transpose(np.array(imgP2, dtype=np.float32)/255., [2,0,1])
-    imgP2_np = np.expand_dims(imgP2_np,0)
-    imgP2_t = torch.from_numpy(imgP2_np).to(device)
-    imgP2_input = F.interpolate(imgP2_t, (112, 112))
-    imgP2_applied = evaluator.apply_all_masks(imgP2_input)
-    imgP2_applied_ = imgP2_applied.unsqueeze(0)
-    allP2_embeddings = evaluator.get_all_embeddings(imgP2_input, imgP2_applied_)
-    embeddingsP2 = allP2_embeddings['resnet50_arcface']
-    cosP2 = np.sum( embeddings[0]*embeddingsP2[0] )/ (np.linalg.norm(embeddings[0]) *np.linalg.norm(embeddingsP2[0]) )
+    #network_cfg = 'resnet100_cosface'
+    #network_cfg = 'resnet18_cosface' 
+    #network_cfg = 'resnet50_cosface' 
+    #network_cfg = 'resnet34_cosface' 
 
-
+    #network_cfg = 'resnet100_magface'
+    #network_cfg = 'resnet50_magface'
+    #network_cfg = 'resnet18_magface'
 
 
 
@@ -419,9 +494,8 @@ def main():
     img_applied2 = evaluator.apply_all_masks(img_input2)
     img_applied2_ = img_applied2.unsqueeze(0)
     all_embeddings2 = evaluator.get_all_embeddings(img_input2, img_applied2_)
-    embeddings2 = all_embeddings2['resnet50_arcface']
+    embeddings2 = all_embeddings2[network_cfg]
     cos2 = np.sum( embeddings2[0]*embeddings2[1] )/ (np.linalg.norm(embeddings2[1]) *np.linalg.norm(embeddings2[0]) )
-    cos2_source_target = np.sum( embeddings[1]*embeddings2[0] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings2[0]) )
     print(cos2)
 
 
@@ -432,9 +506,8 @@ def main():
     img_applied3 = evaluator.apply_all_masks(img_input3)
     img_applied3_ = img_applied3.unsqueeze(0)
     all_embeddings3 = evaluator.get_all_embeddings(img_input3, img_applied3_)
-    embeddings3 = all_embeddings3['resnet50_arcface']
+    embeddings3 = all_embeddings3[network_cfg]
     cos3 = np.sum( embeddings3[0]*embeddings3[1] )/ (np.linalg.norm(embeddings3[1]) *np.linalg.norm(embeddings3[0]) )
-    cos3_source_target = np.sum( embeddings[1]*embeddings3[0] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings3[0]) )
     print(cos3)
 
 
@@ -445,9 +518,8 @@ def main():
     img_applied4 = evaluator.apply_all_masks(img_input4)
     img_applied4_ = img_applied4.unsqueeze(0)
     all_embeddings4 = evaluator.get_all_embeddings(img_input4, img_applied4_)
-    embeddings4 = all_embeddings4['resnet50_arcface']
+    embeddings4 = all_embeddings4[network_cfg]
     cos4 = np.sum( embeddings4[0]*embeddings4[1] )/ (np.linalg.norm(embeddings4[1]) *np.linalg.norm(embeddings4[0]) )
-    cos4_source_target = np.sum( embeddings[1]*embeddings4[0] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings4[0]) )
     print(cos4)
 
     img_np5 = np.transpose(np.array(img5, dtype=np.float32)/255., [2,0,1])
@@ -457,9 +529,8 @@ def main():
     img_applied5 = evaluator.apply_all_masks(img_input5)
     img_applied5_ = img_applied5.unsqueeze(0)
     all_embeddings5 = evaluator.get_all_embeddings(img_input5, img_applied5_)
-    embeddings5 = all_embeddings5['resnet50_arcface']
+    embeddings5 = all_embeddings5[network_cfg]
     cos5 = np.sum( embeddings5[0]*embeddings5[1] )/ (np.linalg.norm(embeddings5[1]) *np.linalg.norm(embeddings5[0]) )
-    cos5_source_target = np.sum( embeddings[1]*embeddings5[0] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings5[0]) )
     print(cos5)
 
     img_np6 = np.transpose(np.array(img6, dtype=np.float32)/255., [2,0,1])
@@ -469,9 +540,8 @@ def main():
     img_applied6 = evaluator.apply_all_masks(img_input6)
     img_applied6_ = img_applied6.unsqueeze(0)
     all_embeddings6 = evaluator.get_all_embeddings(img_input6, img_applied6_)
-    embeddings6 = all_embeddings6['resnet50_arcface']
+    embeddings6 = all_embeddings6[network_cfg]
     cos6 = np.sum( embeddings6[0]*embeddings6[1] )/ (np.linalg.norm(embeddings6[1]) *np.linalg.norm(embeddings6[0]) )
-    cos6_source_target = np.sum( embeddings[1]*embeddings6[0] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings6[0]) )
     print(cos6)
 
     img_np7 = np.transpose(np.array(img7, dtype=np.float32)/255., [2,0,1])
@@ -481,51 +551,95 @@ def main():
     img_applied7 = evaluator.apply_all_masks(img_input7)
     img_applied7_ = img_applied7.unsqueeze(0)
     all_embeddings7 = evaluator.get_all_embeddings(img_input7, img_applied7_)
-    embeddings7 = all_embeddings7['resnet50_arcface']
+    embeddings7 = all_embeddings7[network_cfg]
     cos7 = np.sum( embeddings7[0]*embeddings7[1] )/ (np.linalg.norm(embeddings7[1]) *np.linalg.norm(embeddings7[0]) )
-    cos7_source_target = np.sum( embeddings[1]*embeddings7[0] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings7[0]) )
     print(cos7)
 
-    #cos_orig = np.sum( embeddings[0]*embeddings2[0] )/ (np.linalg.norm(embeddings[0]) *np.linalg.norm(embeddings2[0]) )
-    #cos_masked = np.sum( embeddings[1]*embeddings2[1] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings2[1]) )
-    #cos_source_target = np.sum( embeddings[1]*embeddings2[0] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings2[0]) )
 
 
-    #img_applied2 = F.interpolate(img_applied2, (512, 512)).cpu()
-    #print(img_applied2.shape)
-    #io.imsave('out2_img.png',np.transpose(img_applied2[0],[1,2,0]))
-    
-    #img_applied = F.interpolate(img_applied, (512, 512)).cpu()
-    #print(img_applied.shape)
-    #io.imsave('out_img.png',np.transpose(img_applied[0],[1,2,0]))
+
+    img_np8 = np.transpose(np.array(img8, dtype=np.float32)/255., [2,0,1])
+    img_np8 = np.expand_dims(img_np8,0)
+    img_t8 = torch.from_numpy(img_np8).to(device)
+    img_input8 = F.interpolate(img_t8, (112, 112))
+    img_applied8 = evaluator.apply_all_masks(img_input8)
+    img_applied8_ = img_applied8.unsqueeze(0)
+    all_embeddings8 = evaluator.get_all_embeddings(img_input8, img_applied8_)
+    embeddings8 = all_embeddings8[network_cfg]
+    cos8 = np.sum( embeddings8[0]*embeddings8[1] )/ (np.linalg.norm(embeddings8[1]) *np.linalg.norm(embeddings8[0]) )
+    print(cos8)
+
+
+
+    img_np9 = np.transpose(np.array(img9, dtype=np.float32)/255., [2,0,1])
+    img_np9 = np.expand_dims(img_np9,0)
+    img_t9 = torch.from_numpy(img_np9).to(device)
+    img_input9 = F.interpolate(img_t9, (112, 112))
+    img_applied9 = evaluator.apply_all_masks(img_input9)
+    img_applied9_ = img_applied9.unsqueeze(0)
+    all_embeddings9 = evaluator.get_all_embeddings(img_input9, img_applied9_)
+    embeddings9 = all_embeddings9[network_cfg]
+    cos9 = np.sum( embeddings9[0]*embeddings9[1] )/ (np.linalg.norm(embeddings9[1]) *np.linalg.norm(embeddings9[0]) )
+    print(cos9)
+
+
+
+
+
+
+
+
+    img_np10 = np.transpose(np.array(img10, dtype=np.float32)/255., [2,0,1])
+    img_np10 = np.expand_dims(img_np10,0)
+    img_t10 = torch.from_numpy(img_np10).to(device)
+    img_input10 = F.interpolate(img_t10, (112, 112))
+    img_applied10 = evaluator.apply_all_masks(img_input10)
+    img_applied10_ = img_applied10.unsqueeze(0)
+    all_embeddings10 = evaluator.get_all_embeddings(img_input10, img_applied10_)
+    embeddings10 = all_embeddings10[network_cfg]
+    cos10 = np.sum( embeddings10[0]*embeddings10[1] )/ (np.linalg.norm(embeddings10[1]) *np.linalg.norm(embeddings10[0]) )
+    print(cos10)
+
+    img_np11 = np.transpose(np.array(img11, dtype=np.float32)/255., [2,0,1])
+    img_np11 = np.expand_dims(img_np11,0)
+    img_t11 = torch.from_numpy(img_np11).to(device)
+    img_input11 = F.interpolate(img_t11, (112, 112))
+    img_applied11 = evaluator.apply_all_masks(img_input11)
+    img_applied11_ = img_applied11.unsqueeze(0)
+    all_embeddings11 = evaluator.get_all_embeddings(img_input11, img_applied11_)
+    embeddings11 = all_embeddings11[network_cfg]
+    cos11 = np.sum( embeddings11[0]*embeddings11[1] )/ (np.linalg.norm(embeddings11[1]) *np.linalg.norm(embeddings11[0]) )
+    print(cos11)
+
+    img_np12 = np.transpose(np.array(img12, dtype=np.float32)/255., [2,0,1])
+    img_np12 = np.expand_dims(img_np12,0)
+    img_t12 = torch.from_numpy(img_np12).to(device)
+    img_input12 = F.interpolate(img_t12, (112, 112))
+    img_applied12 = evaluator.apply_all_masks(img_input12)
+    img_applied12_ = img_applied12.unsqueeze(0)
+    all_embeddings12 = evaluator.get_all_embeddings(img_input12, img_applied12_)
+    embeddings12 = all_embeddings12[network_cfg]
+    cos12 = np.sum( embeddings12[0]*embeddings12[1] )/ (np.linalg.norm(embeddings12[1]) *np.linalg.norm(embeddings12[0]) )
+    print(cos12)
+
+
+
+
 
     fig = plt.figure()
 
 
-    ax1 = fig.add_subplot(3,4,1)
+    ax1 = fig.add_subplot(4,4,1)
     #plt.imshow(img)
     plt.imshow(np.transpose(img_input[0].cpu(),[1,2,0]))
     plt.axis('off')
 
 
-    fig.add_subplot(3,4,2)
-    #plt.imshow(imgP)
-    plt.imshow(np.transpose(imgP_input[0].cpu(),[1,2,0]))
-    #plt.imshow(np.transpose(imgP_applied[0].cpu(),[1,2,0]))
-    plt.text(0, 0., "%s " % (cosP))
-    plt.axis('off')
-
-    ax1 = fig.add_subplot(3,4,3)
-    #plt.imshow(imgP)
-    plt.imshow(np.transpose(imgP2_input[0].cpu(),[1,2,0]))
-    #plt.imshow(np.transpose(imgP2_applied[0].cpu(),[1,2,0]))
-    plt.axis('off')
-    plt.text(0, 0., "%s " % (cosP2))
 
 
 
 
-    ax1 = fig.add_subplot(3,4,4)
+    ax1 = fig.add_subplot(4,4,4)
     plt.imshow(np.transpose(img_applied[0].cpu(),[1,2,0]))
     plt.axis('off')
     plt.text(0, 0., "%s " % (cos))
@@ -535,42 +649,74 @@ def main():
 
 
 
-    ax1 = fig.add_subplot(3,4,5)
+    ax1 = fig.add_subplot(4,4,5)
     #plt.imshow(np.transpose(img_applied2[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input2[0].cpu(),[1,2,0]))
     plt.axis('off')
-    plt.text(0, 0., "%s " % (cos2_source_target))
+    plt.text(0, 0., "%s " % (cos2))
 
-    ax1 = fig.add_subplot(3,4,6)
+    ax1 = fig.add_subplot(4,4,6)
     #plt.imshow(np.transpose(img_applied3[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input3[0].cpu(),[1,2,0]))
     plt.axis('off')
-    plt.text(0, 0., "%s " % (cos3_source_target))
+    plt.text(0, 0., "%s " % (cos3))
 
-    ax1 = fig.add_subplot(3,4,7)
+    ax1 = fig.add_subplot(4,4,7)
     #plt.imshow(np.transpose(img_applied4[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input4[0].cpu(),[1,2,0]))
     plt.axis('off')
-    plt.text(0, 0., "%s " % (cos4_source_target))
+    plt.text(0, 0., "%s " % (cos4))
 
 
-    ax1 = fig.add_subplot(3,4,8)
+    ax1 = fig.add_subplot(4,4,8)
     #plt.imshow(np.transpose(img_applied5[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input5[0].cpu(),[1,2,0]))
     plt.axis('off')
-    plt.text(0, 0., "%s " % (cos5_source_target))
+    plt.text(0, 0., "%s " % (cos5))
 
-    ax1 = fig.add_subplot(3,4,9)
+    ax1 = fig.add_subplot(4,4,9)
     #plt.imshow(np.transpose(img_applied6[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input6[0].cpu(),[1,2,0]))
     plt.axis('off')
-    plt.text(0, 0., "%s " % (cos6_source_target))
+    plt.text(0, 0., "%s " % (cos6))
 
-    ax1 = fig.add_subplot(3,4,10)
+    ax1 = fig.add_subplot(4,4,10)
     #plt.imshow(np.transpose(img_applied7[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input7[0].cpu(),[1,2,0]))
     plt.axis('off')
-    plt.text(0, 0., "%s " % (cos7_source_target))
+    plt.text(0, 0., "%s " % (cos7))
+
+    ax1 = fig.add_subplot(4,4,11)
+    #plt.imshow(np.transpose(img_applied7[0].cpu(),[1,2,0]))
+    plt.imshow(np.transpose(img_input8[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos8))
+
+    ax1 = fig.add_subplot(4,4,12)
+    #plt.imshow(np.transpose(img_applied7[0].cpu(),[1,2,0]))
+    plt.imshow(np.transpose(img_input9[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos9))
+
+
+
+
+    ax1 = fig.add_subplot(4,4,13)
+    plt.imshow(np.transpose(img_input10[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos10))
+
+
+    ax1 = fig.add_subplot(4,4,14)
+    plt.imshow(np.transpose(img_input11[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos11))
+
+    ax1 = fig.add_subplot(4,4,15)
+    plt.imshow(np.transpose(img_input12[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos12))
+
 
 
 

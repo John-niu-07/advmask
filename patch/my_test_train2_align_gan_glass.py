@@ -18,7 +18,7 @@ from sklearn.preprocessing import label_binarize
 import matplotlib
 from pathlib import Path
 import pickle
-import seaborn as sns
+#import seaborn as sns
 import pandas as pd
 #matplotlib.use('Agg')
 matplotlib.use('TkAgg')
@@ -328,7 +328,7 @@ def main():
     img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/011_aligned.png').convert('RGB')
     #img = Image.open('/face/Mask/AdversarialMask/datasets/advmask_aligned.png').convert('RGB')
     #img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/0005238/047_aligned.png').convert('RGB')
-    img_target = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/001_aligned.png').convert('RGB')
+    img_target = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960_align/001_aligned.png').convert('RGB')
 
     img1 = Image.open('/face/Mask/AdversarialMask/patch/glass/1.png').convert('RGB')
     img2 = Image.open('/face/Mask/AdversarialMask/patch/glass/3.png').convert('RGB')
