@@ -14,12 +14,30 @@ from art.attacks.poisoning.perturbations.image_perturbations import add_pattern_
 from art.estimators.classification import KerasClassifier
 from art.utils import load_mnist, preprocess
 from art.defences.detector.poison import ActivationDefence
+from art.defences.detector.poison import SpectralSignatureDefense
 
+from art.utils import load_dataset
+from art.preactresnet import PreActBlock, PreActBottleneck, PreActResNet, PreActResNet18, initialize_weights, PreActResNet18_
+
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import numpy as np
+from torch import Tensor
+from torch import torch
+from art.estimators.classification import PyTorchClassifier
 
 def main():
     # Read MNIST dataset (x_raw contains the original images):
-    (x_raw, y_raw), (x_raw_test, y_raw_test), min_, max_ = load_mnist(raw=True)
+    #(x_raw, y_raw), (x_raw_test, y_raw_test), min_, max_ = load_mnist(raw=True)
+    #(x_train, y_train), (x_test, y_test), min_, max_ = load_dataset(str("cifar10"))
+    (x_raw, y_raw_), (x_raw_test, y_raw_test_), min_, max_ = load_dataset(str("cifar10"))
 
+    y_raw = np.argmax(y_raw_, axis=1)
+    y_raw_test = np.argmax(y_raw_test_, axis=1)
+    #print(x_raw.shape)
+    #print(y_raw)
+    #print(yy)
     n_train = np.shape(x_raw)[0]
     num_selection = 5000
     random_selection_indices = np.random.choice(n_train, num_selection)
@@ -27,17 +45,20 @@ def main():
     y_raw = y_raw[random_selection_indices]
 
     # Poison training data
-    perc_poison = 0.33
+    #perc_poison = 0.33
+    perc_poison = 0.15
     (is_poison_train, x_poisoned_raw, y_poisoned_raw) = generate_backdoor(x_raw, y_raw, perc_poison)
+    print(y_poisoned_raw)
     x_train, y_train = preprocess(x_poisoned_raw, y_poisoned_raw)
+    print(y_train)
     # Add channel axis:
-    x_train = np.expand_dims(x_train, axis=3)
+    #x_train = np.expand_dims(x_train, axis=3)
 
     # Poison test data
     (is_poison_test, x_poisoned_raw_test, y_poisoned_raw_test) = generate_backdoor(x_raw_test, y_raw_test, perc_poison)
     x_test, y_test = preprocess(x_poisoned_raw_test, y_poisoned_raw_test)
     # Add channel axis:
-    x_test = np.expand_dims(x_test, axis=3)
+    #x_test = np.expand_dims(x_test, axis=3)
 
     # Shuffle training data so poison is not together
     n_train = np.shape(y_train)[0]
@@ -47,6 +68,7 @@ def main():
     y_train = y_train[shuffled_indices]
     is_poison_train = is_poison_train[shuffled_indices]
 
+    '''
     # Create Keras convolutional neural network - basic architecture from Keras examples
     # Source here: https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py
     model = Sequential()
@@ -58,12 +80,44 @@ def main():
     model.add(Dense(128, activation="relu"))
     model.add(Dropout(0.5))
     model.add(Dense(10, activation="softmax"))
-
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    '''
 
-    classifier = KerasClassifier(model=model, clip_values=(min_, max_))
+    model = PreActResNet18()
+    opt = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
+    criterion = nn.CrossEntropyLoss()
 
-    classifier.fit(x_train, y_train, nb_epochs=30, batch_size=128)
+    cifar_mu = np.ones((3, 32, 32))
+    cifar_mu[0, :, :] = 0.4914
+    cifar_mu[1, :, :] = 0.4822
+    cifar_mu[2, :, :] = 0.4465
+
+
+    cifar_std = np.ones((3, 32, 32))
+    cifar_std[0, :, :] = 0.2471
+    cifar_std[1, :, :] = 0.2435
+    cifar_std[2, :, :] = 0.2616
+
+
+
+    #classifier = KerasClassifier(model=model, clip_values=(min_, max_))
+
+
+    classifier = PyTorchClassifier(
+            model=model,
+            clip_values=(0.0, 1.0),
+            preprocessing=(cifar_mu, cifar_std),
+            loss=criterion,
+            optimizer=opt,
+            input_shape=(3, 32, 32),
+            nb_classes=10,
+            )
+
+
+    x_train = x_train.transpose(0, 3, 1, 2).astype("float32")
+    x_test = x_test.transpose(0, 3, 1, 2).astype("float32")    
+
+    classifier.fit(x_train, y_train, nb_epochs=20, batch_size=128)
 
     # Evaluate the classifier on the test set
     preds = np.argmax(classifier.predict(x_test), axis=1)
@@ -81,12 +135,16 @@ def main():
     print("\nClean test set accuracy: %.2f%%" % (acc * 100))
 
     # Calling poisoning defence:
-    defence = ActivationDefence(classifier, x_train, y_train)
+    #defence = ActivationDefence(classifier, x_train, y_train)
+    defence = SpectralSignatureDefense(classifier, x_train, y_train)
 
     # End-to-end method:
     print("------------------- Results using size metric -------------------")
-    print(defence.get_params())
-    defence.detect_poison(nb_clusters=2, nb_dims=10, reduce="PCA")
+    #print(defence.get_params())
+    #defence.detect_poison(nb_clusters=2, nb_dims=10, reduce="PCA")
+    defence.detect_poison(expected_pp_poison=0.15, eps_multiplier=3.5)
+    pp = defence.get_params()
+    print(pp['eps_multiplier'])
 
     # Evaluate method when ground truth is known:
     is_clean = is_poison_train == 0
@@ -141,7 +199,9 @@ def main():
 
 
 def generate_backdoor(
-    x_clean, y_clean, percent_poison, backdoor_type="pattern", sources=np.arange(10), targets=(np.arange(10) + 1) % 10
+    #x_clean, y_clean, percent_poison, backdoor_type="pattern", sources=np.arange(10), targets=(np.arange(10) + 1) % 10
+    x_clean, y_clean, percent_poison, backdoor_type="pattern", sources=np.arange(10), targets=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    #x_clean, y_clean, percent_poison, backdoor_type="pixel", sources=np.arange(10), targets=(np.arange(10) + 1) % 10
 ):
     """
     Creates a backdoor in MNIST images by adding a pattern or pixel to the image and changing the label to a targeted
@@ -174,6 +234,11 @@ def generate_backdoor(
     y_poison = np.copy(y_clean)
     is_poison = np.zeros(np.shape(y_poison))
 
+    print('---')
+    print(sources)
+    print(targets)
+    print(x_clean.shape)
+    print(y_clean.shape)
     for i, (src, tgt) in enumerate(zip(sources, targets)):
         n_points_in_tgt = np.size(np.where(y_clean == tgt))
         num_poison = round((percent_poison * n_points_in_tgt) / (1 - percent_poison))
