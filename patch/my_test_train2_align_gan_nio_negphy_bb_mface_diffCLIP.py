@@ -3,11 +3,11 @@ import os
 sys.path.append('/face/Mask/AdversarialMask')
 
 import warnings
-import utils
+import utils 
 import torch
 from nn_modules import LandmarkExtractor, FaceXZooProjector
 
-from config_gan import patch_config_types
+from config_gan_bb import patch_config_types
 from torchvision import transforms
 from PIL import Image
 import numpy as np
@@ -60,12 +60,18 @@ class Evaluator:
         self.mask_t = transforms.ToTensor()(Image.open('../prnet/new_uvT.png').convert('L'))
 
 
-        self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask5.png').convert('L')).to(device).unsqueeze(0)
+
+
+        #self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask5.png').convert('L')).to(device).unsqueeze(0)
+        self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask10.png').convert('L')).to(device).unsqueeze(0)
+        self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask9.png').convert('L')).to(device).unsqueeze(0)
         #self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask3.png').convert('L')).to(device).unsqueeze(0)
         #self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask7.png').convert('L')).to(device).unsqueeze(0)
 
         #self.patch_mask = transforms.ToTensor()(Image.open('/face/Mask/AdversarialMask/datasets/012_mask6.png').convert('L')).to(device).unsqueeze(0)
         self.patch_mask = F.interpolate(self.patch_mask, (112, 112))
+
+
 
         #Path(self.config.current_dir).mkdir(parents=True, exist_ok=True)
         #utils.save_class_to_file(self.config, self.config.current_dir)
@@ -382,39 +388,60 @@ def main():
     #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/03-04-2023_17-26-49/final_results/final_patch.png').convert('RGB') # con=10, [0, 2]
 
 
-    # good stn
+
+
+    # good stn res50 arcface
     adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/05-04-2023_17-40-06/final_results/final_patch.png').convert('RGB') # con=0.01 stn
+    adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/07-04-2023_14-13-09/final_results/final_patch.png').convert('RGB') # con=0.01 stn mask9
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/07-04-2023_14-47-17/final_results/final_patch.png').convert('RGB') # con=0.01 stn mask10
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/09-04-2023_10-50-22/final_results/final_patch.png').convert('RGB') # con=10 stn mask10
+
+
+    # blackbox
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/12-04-2023_09-36-47/final_results/final_patch.png').convert('RGB') # stn mask10 xface100
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/13-04-2023_11-42-22/final_results/final_patch.png').convert('RGB') # stn mask10 all but not mag
+
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/13-04-2023_13-48-33/final_results/final_patch.png').convert('RGB') # stn mask9 all but not mag
+    #adv_mask = Image.open('/face/Mask/AdversarialMask/patch/experiments/April/13-04-2023_17-11-46/final_results/final_patch.png').convert('RGB') # stn mask9 full + mag
     #img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/085_aligned.png').convert('RGB')
 
 
 
-
+    adv_mask = Image.open('/face/Mask/DiffusionCLIP/runs/test_FT_adv_CelebA_HQ_beards_id_0.01_l1_0.0_clip_0/image_samples/train_1_person_with_beards_4_ngen6.png').convert('RGB') # con=0.01 stn mask9
     img = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/085_aligned.png').convert('RGB')
+
+
+
+
+
+
+
+
 
     adv_mask_t = transforms.ToTensor()(adv_mask).unsqueeze(0)
     adv_mask_t = F.interpolate(adv_mask_t, (112, 112))
     print('Starting test...', flush=True)
     evaluator = Evaluator(config, adv_mask_t)
     
-
-    #img2 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/058_aligned.png').convert('RGB')
     img2 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/058_aligned.png').convert('RGB')
+    img3 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/001_aligned.png').convert('RGB')
+    img4 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/008_aligned.png').convert('RGB')
+    img5 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/012_aligned.png').convert('RGB')
+    img6 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/015_aligned.png').convert('RGB')
+    img7 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/049_aligned.png').convert('RGB')
+    img8 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/053_aligned.png').convert('RGB')
+    img9 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/058_aligned.png').convert('RGB')
+    img10 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/059_aligned.png').convert('RGB')
+    img11 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/077_aligned.png').convert('RGB')
+    img12 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/1302735/081_aligned.png').convert('RGB')
 
-    #img2 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/008_aligned.png').convert('RGB')
-    #img2 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/4204960/010_aligned.png').convert('RGB')
-    img3 = Image.open('/face/Mask/idinvert_pytorch/examples/r256/004_aligned.png').convert('RGB')
-    img4 = Image.open('/face/Mask/idinvert_pytorch/examples/r256/003_aligned.png').convert('RGB')
-    img5 = Image.open('/face/Mask/idinvert_pytorch/examples/r256/006_aligned.png').convert('RGB')
-    img6 = Image.open('/face/Mask/idinvert_pytorch/examples/r256/007_aligned.png').convert('RGB')
-    img7 = Image.open('/face/Mask/idinvert_pytorch/examples/r256/010_aligned.png').convert('RGB')
-    #img2 = Image.open('/face/Mask/AdversarialMask/datasets/CASIA/0001152/110_aligned.png').convert('RGB')
+
 
     img_np = np.transpose(np.array(img, dtype=np.float32)/255., [2,0,1])
     img_np = np.expand_dims(img_np,0)
     img_t = torch.from_numpy(img_np).to(device)
     img_input = F.interpolate(img_t, (112, 112))
     img_applied = evaluator.apply_all_masks(img_input)
-
     img_applied_ = img_applied.unsqueeze(0)
     all_embeddings = evaluator.get_all_embeddings(img_input, img_applied_)
     embeddings = all_embeddings['resnet50_arcface']
@@ -422,6 +449,20 @@ def main():
     print(cos)
     #print(np.sum( embeddings[1]*embeddings[1] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings[0]) ))
 
+
+    #network_cfg = 'resnet100_arcface'
+    network_cfg = 'resnet50_arcface'
+    #network_cfg = 'resnet34_arcface'
+    #network_cfg = 'resnet18_arcface'
+
+    #network_cfg = 'resnet100_cosface'
+    #network_cfg = 'resnet18_cosface' 
+    #network_cfg = 'resnet50_cosface' 
+    #network_cfg = 'resnet34_cosface' 
+
+    #network_cfg = 'resnet100_magface'
+    #network_cfg = 'resnet50_magface'
+    #network_cfg = 'resnet18_magface'
 
 
 
@@ -432,7 +473,7 @@ def main():
     img_applied2 = evaluator.apply_all_masks(img_input2)
     img_applied2_ = img_applied2.unsqueeze(0)
     all_embeddings2 = evaluator.get_all_embeddings(img_input2, img_applied2_)
-    embeddings2 = all_embeddings2['resnet50_arcface']
+    embeddings2 = all_embeddings2[network_cfg]
     cos2 = np.sum( embeddings2[0]*embeddings2[1] )/ (np.linalg.norm(embeddings2[1]) *np.linalg.norm(embeddings2[0]) )
     print(cos2)
 
@@ -444,7 +485,7 @@ def main():
     img_applied3 = evaluator.apply_all_masks(img_input3)
     img_applied3_ = img_applied3.unsqueeze(0)
     all_embeddings3 = evaluator.get_all_embeddings(img_input3, img_applied3_)
-    embeddings3 = all_embeddings3['resnet50_arcface']
+    embeddings3 = all_embeddings3[network_cfg]
     cos3 = np.sum( embeddings3[0]*embeddings3[1] )/ (np.linalg.norm(embeddings3[1]) *np.linalg.norm(embeddings3[0]) )
     print(cos3)
 
@@ -456,7 +497,7 @@ def main():
     img_applied4 = evaluator.apply_all_masks(img_input4)
     img_applied4_ = img_applied4.unsqueeze(0)
     all_embeddings4 = evaluator.get_all_embeddings(img_input4, img_applied4_)
-    embeddings4 = all_embeddings4['resnet50_arcface']
+    embeddings4 = all_embeddings4[network_cfg]
     cos4 = np.sum( embeddings4[0]*embeddings4[1] )/ (np.linalg.norm(embeddings4[1]) *np.linalg.norm(embeddings4[0]) )
     print(cos4)
 
@@ -467,7 +508,7 @@ def main():
     img_applied5 = evaluator.apply_all_masks(img_input5)
     img_applied5_ = img_applied5.unsqueeze(0)
     all_embeddings5 = evaluator.get_all_embeddings(img_input5, img_applied5_)
-    embeddings5 = all_embeddings5['resnet50_arcface']
+    embeddings5 = all_embeddings5[network_cfg]
     cos5 = np.sum( embeddings5[0]*embeddings5[1] )/ (np.linalg.norm(embeddings5[1]) *np.linalg.norm(embeddings5[0]) )
     print(cos5)
 
@@ -478,7 +519,7 @@ def main():
     img_applied6 = evaluator.apply_all_masks(img_input6)
     img_applied6_ = img_applied6.unsqueeze(0)
     all_embeddings6 = evaluator.get_all_embeddings(img_input6, img_applied6_)
-    embeddings6 = all_embeddings6['resnet50_arcface']
+    embeddings6 = all_embeddings6[network_cfg]
     cos6 = np.sum( embeddings6[0]*embeddings6[1] )/ (np.linalg.norm(embeddings6[1]) *np.linalg.norm(embeddings6[0]) )
     print(cos6)
 
@@ -489,27 +530,85 @@ def main():
     img_applied7 = evaluator.apply_all_masks(img_input7)
     img_applied7_ = img_applied7.unsqueeze(0)
     all_embeddings7 = evaluator.get_all_embeddings(img_input7, img_applied7_)
-    embeddings7 = all_embeddings7['resnet50_arcface']
+    embeddings7 = all_embeddings7[network_cfg]
     cos7 = np.sum( embeddings7[0]*embeddings7[1] )/ (np.linalg.norm(embeddings7[1]) *np.linalg.norm(embeddings7[0]) )
     print(cos7)
 
-    #cos_orig = np.sum( embeddings[0]*embeddings2[0] )/ (np.linalg.norm(embeddings[0]) *np.linalg.norm(embeddings2[0]) )
-    #cos_masked = np.sum( embeddings[1]*embeddings2[1] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings2[1]) )
-    #cos_source_target = np.sum( embeddings[1]*embeddings2[0] )/ (np.linalg.norm(embeddings[1]) *np.linalg.norm(embeddings2[0]) )
 
 
-    #img_applied2 = F.interpolate(img_applied2, (512, 512)).cpu()
-    #print(img_applied2.shape)
-    #io.imsave('out2_img.png',np.transpose(img_applied2[0],[1,2,0]))
-    
-    #img_applied = F.interpolate(img_applied, (512, 512)).cpu()
-    #print(img_applied.shape)
-    #io.imsave('out_img.png',np.transpose(img_applied[0],[1,2,0]))
+
+    img_np8 = np.transpose(np.array(img8, dtype=np.float32)/255., [2,0,1])
+    img_np8 = np.expand_dims(img_np8,0)
+    img_t8 = torch.from_numpy(img_np8).to(device)
+    img_input8 = F.interpolate(img_t8, (112, 112))
+    img_applied8 = evaluator.apply_all_masks(img_input8)
+    img_applied8_ = img_applied8.unsqueeze(0)
+    all_embeddings8 = evaluator.get_all_embeddings(img_input8, img_applied8_)
+    embeddings8 = all_embeddings8[network_cfg]
+    cos8 = np.sum( embeddings8[0]*embeddings8[1] )/ (np.linalg.norm(embeddings8[1]) *np.linalg.norm(embeddings8[0]) )
+    print(cos8)
+
+
+
+    img_np9 = np.transpose(np.array(img9, dtype=np.float32)/255., [2,0,1])
+    img_np9 = np.expand_dims(img_np9,0)
+    img_t9 = torch.from_numpy(img_np9).to(device)
+    img_input9 = F.interpolate(img_t9, (112, 112))
+    img_applied9 = evaluator.apply_all_masks(img_input9)
+    img_applied9_ = img_applied9.unsqueeze(0)
+    all_embeddings9 = evaluator.get_all_embeddings(img_input9, img_applied9_)
+    embeddings9 = all_embeddings9[network_cfg]
+    cos9 = np.sum( embeddings9[0]*embeddings9[1] )/ (np.linalg.norm(embeddings9[1]) *np.linalg.norm(embeddings9[0]) )
+    print(cos9)
+
+
+
+
+
+
+
+
+    img_np10 = np.transpose(np.array(img10, dtype=np.float32)/255., [2,0,1])
+    img_np10 = np.expand_dims(img_np10,0)
+    img_t10 = torch.from_numpy(img_np10).to(device)
+    img_input10 = F.interpolate(img_t10, (112, 112))
+    img_applied10 = evaluator.apply_all_masks(img_input10)
+    img_applied10_ = img_applied10.unsqueeze(0)
+    all_embeddings10 = evaluator.get_all_embeddings(img_input10, img_applied10_)
+    embeddings10 = all_embeddings10[network_cfg]
+    cos10 = np.sum( embeddings10[0]*embeddings10[1] )/ (np.linalg.norm(embeddings10[1]) *np.linalg.norm(embeddings10[0]) )
+    print(cos10)
+
+    img_np11 = np.transpose(np.array(img11, dtype=np.float32)/255., [2,0,1])
+    img_np11 = np.expand_dims(img_np11,0)
+    img_t11 = torch.from_numpy(img_np11).to(device)
+    img_input11 = F.interpolate(img_t11, (112, 112))
+    img_applied11 = evaluator.apply_all_masks(img_input11)
+    img_applied11_ = img_applied11.unsqueeze(0)
+    all_embeddings11 = evaluator.get_all_embeddings(img_input11, img_applied11_)
+    embeddings11 = all_embeddings11[network_cfg]
+    cos11 = np.sum( embeddings11[0]*embeddings11[1] )/ (np.linalg.norm(embeddings11[1]) *np.linalg.norm(embeddings11[0]) )
+    print(cos11)
+
+    img_np12 = np.transpose(np.array(img12, dtype=np.float32)/255., [2,0,1])
+    img_np12 = np.expand_dims(img_np12,0)
+    img_t12 = torch.from_numpy(img_np12).to(device)
+    img_input12 = F.interpolate(img_t12, (112, 112))
+    img_applied12 = evaluator.apply_all_masks(img_input12)
+    img_applied12_ = img_applied12.unsqueeze(0)
+    all_embeddings12 = evaluator.get_all_embeddings(img_input12, img_applied12_)
+    embeddings12 = all_embeddings12[network_cfg]
+    cos12 = np.sum( embeddings12[0]*embeddings12[1] )/ (np.linalg.norm(embeddings12[1]) *np.linalg.norm(embeddings12[0]) )
+    print(cos12)
+
+
+
+
 
     fig = plt.figure()
 
 
-    ax1 = fig.add_subplot(3,4,1)
+    ax1 = fig.add_subplot(4,4,1)
     #plt.imshow(img)
     plt.imshow(np.transpose(img_input[0].cpu(),[1,2,0]))
     plt.axis('off')
@@ -519,7 +618,7 @@ def main():
 
 
 
-    ax1 = fig.add_subplot(3,4,4)
+    ax1 = fig.add_subplot(4,4,4)
     plt.imshow(np.transpose(img_applied[0].cpu(),[1,2,0]))
     plt.axis('off')
     plt.text(0, 0., "%s " % (cos))
@@ -529,42 +628,74 @@ def main():
 
 
 
-    ax1 = fig.add_subplot(3,4,5)
+    ax1 = fig.add_subplot(4,4,5)
     #plt.imshow(np.transpose(img_applied2[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input2[0].cpu(),[1,2,0]))
     plt.axis('off')
     plt.text(0, 0., "%s " % (cos2))
 
-    ax1 = fig.add_subplot(3,4,6)
+    ax1 = fig.add_subplot(4,4,6)
     #plt.imshow(np.transpose(img_applied3[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input3[0].cpu(),[1,2,0]))
     plt.axis('off')
     plt.text(0, 0., "%s " % (cos3))
 
-    ax1 = fig.add_subplot(3,4,7)
+    ax1 = fig.add_subplot(4,4,7)
     #plt.imshow(np.transpose(img_applied4[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input4[0].cpu(),[1,2,0]))
     plt.axis('off')
     plt.text(0, 0., "%s " % (cos4))
 
 
-    ax1 = fig.add_subplot(3,4,8)
+    ax1 = fig.add_subplot(4,4,8)
     #plt.imshow(np.transpose(img_applied5[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input5[0].cpu(),[1,2,0]))
     plt.axis('off')
     plt.text(0, 0., "%s " % (cos5))
 
-    ax1 = fig.add_subplot(3,4,9)
+    ax1 = fig.add_subplot(4,4,9)
     #plt.imshow(np.transpose(img_applied6[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input6[0].cpu(),[1,2,0]))
     plt.axis('off')
     plt.text(0, 0., "%s " % (cos6))
 
-    ax1 = fig.add_subplot(3,4,10)
+    ax1 = fig.add_subplot(4,4,10)
     #plt.imshow(np.transpose(img_applied7[0].cpu(),[1,2,0]))
     plt.imshow(np.transpose(img_input7[0].cpu(),[1,2,0]))
     plt.axis('off')
     plt.text(0, 0., "%s " % (cos7))
+
+    ax1 = fig.add_subplot(4,4,11)
+    #plt.imshow(np.transpose(img_applied7[0].cpu(),[1,2,0]))
+    plt.imshow(np.transpose(img_input8[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos8))
+
+    ax1 = fig.add_subplot(4,4,12)
+    #plt.imshow(np.transpose(img_applied7[0].cpu(),[1,2,0]))
+    plt.imshow(np.transpose(img_input9[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos9))
+
+
+
+
+    ax1 = fig.add_subplot(4,4,13)
+    plt.imshow(np.transpose(img_input10[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos10))
+
+
+    ax1 = fig.add_subplot(4,4,14)
+    plt.imshow(np.transpose(img_input11[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos11))
+
+    ax1 = fig.add_subplot(4,4,15)
+    plt.imshow(np.transpose(img_input12[0].cpu(),[1,2,0]))
+    plt.axis('off')
+    plt.text(0, 0., "%s " % (cos12))
+
 
 
 

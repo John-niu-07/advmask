@@ -1,0 +1,2 @@
+cp neg_latent_explore.npy neg_latent_all.npy
+python train_targeted_gan2_blending_clamp2_D_explore.py

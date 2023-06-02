@@ -91,12 +91,17 @@ class BaseConfiguration:
         self.initial_patch = 'white'  # body, white, random, stripes, l_stripes
         #self.initial_patch = 'grey'  # body, white, random, stripes, l_stripes
         #self.initial_patch = 'init'  # body, white, random, stripes, l_stripes
-        #self.epochs = 450
-        self.epochs = 100 
+        #self.epochs = 6450
+        #self.epochs = 1450
+        self.epochs = 86800 
+        self.epochs = 6800 
+        self.epochs = 2000 
+        #self.epochs = 8800 
         #self.epochs = 20
         #self.start_learning_rate = 1e-2
         #self.start_learning_rate = 0.01
-        #self.start_learning_rate = 0.05
+
+        #self.start_learning_rate = 0.4
         self.start_learning_rate = 0.01
 
         #self.start_learning_rate = 1e-1
@@ -112,7 +117,17 @@ class BaseConfiguration:
                                                                                         min_lr=self.sc_min_lr,
                                                                                         mode='min')
         '''
-        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[9800, 9900], gamma=0.1)
+        #self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[9800, 9900], gamma=0.1)
+        #self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[19800, 19900], gamma=0.1)
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[2000, 16800], gamma=4)
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[2000, 86800], gamma=3)
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[2000, 86800], gamma=2.2)
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[2000, 86800], gamma=2.3)
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[800, 86800], gamma=2.5)
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[800, 86800], gamma=1.5)
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[800, 86800], gamma=2.2)
+        self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[800, 86800], gamma=2.5)
+        #self.scheduler_factory = lambda optimizer: optim.lr_scheduler.MultiStepLR(optimizer, milestones=[800, 86800], gamma=2.2)
 
         # Landmark detection options
         self.landmark_detector_type = 'mobilefacenet'  # face_alignment, mobilefacenet
